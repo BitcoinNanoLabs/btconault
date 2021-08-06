@@ -59,7 +59,7 @@ export class ImportWalletComponent implements OnInit {
         this.walletPassword = '';
         return this.notifications.sendError(`Invalid password, please try again`);
       }
-      if (!this.util.nano.isValidSeed(decryptedSeed)) {
+      if (!this.util.btco.isValidSeed(decryptedSeed)) {
         this.walletPassword = '';
         return this.notifications.sendError(`Invalid seed format (non HEX characters)`);
       }

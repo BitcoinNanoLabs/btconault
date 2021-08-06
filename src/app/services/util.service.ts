@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as blake from 'blakejs';
 import {BigNumber} from 'bignumber.js';
-import * as nanocurrency from 'nanocurrency';
+import * as btcocurrency from 'btcocurrency';
 
 const nacl = window['nacl'];
 const STATE_BLOCK_PREAMBLE = '0000000000000000000000000000000000000000000000000000000000000006';
@@ -64,12 +64,12 @@ export class UtilService {
     isValidNanoAmount: isValidNanoAmount,
     isValidAmount: isValidAmount,
   };
-  nano = {
-    mnanoToRaw: mnanoToRaw,
-    knanoToRaw: knanoToRaw,
-    nanoToRaw: nanoToRaw,
-    rawToMnano: rawToMnano,
-    rawToKnano: rawToKnano,
+  btco = {
+    mbtcoToRaw: mbtcoToRaw,
+    kbtcoToRaw: kbtcoToRaw,
+    btcoToRaw: btcoToRaw,
+    rawToMBtco: rawToMBtco,
+    rawToKbtco: rawToKbtco,
     rawToNano: rawToNano,
     hashStateBlock: hashStateBlock,
     isValidSeed: isValidSeed,
@@ -284,7 +284,7 @@ function generateAccountKeyPair(accountSecretKeyBytes, expanded = false) {
   return nacl.sign.keyPair.fromSecretKey(accountSecretKeyBytes, expanded);
 }
 
-function getPublicAccountID(accountPublicKeyBytes, prefix = 'nano') {
+function getPublicAccountID(accountPublicKeyBytes, prefix = 'btco') {
   const accountHex = util.uint8.toHex(accountPublicKeyBytes);
   const keyBytes = util.uint4.toUint8(util.hex.toUint4(accountHex)); // For some reason here we go from u, to hex, to 4, to 8??
   const checksum = util.uint5.toString(util.uint4.toUint5(util.uint8.toUint4(blake.blake2b(keyBytes, null, 5).reverse())));
@@ -294,7 +294,7 @@ function getPublicAccountID(accountPublicKeyBytes, prefix = 'nano') {
 }
 
 function isValidAccount(account: string): boolean {
-  return nanocurrency.checkAddress(account);
+  return btcocurrency.checkAddress(account);
 }
 
 // Check if a string is a numeric and larger than 0 but less than Nano supply
@@ -302,7 +302,7 @@ function isValidNanoAmount(val: string) {
   // numerics and last character is not a dot and number of dots is 0 or 1
   const isnum = /^-?\d*\.?\d*$/.test(val);
   if (isnum && String(val).slice(-1) !== '.') {
-    if (val !== '' && mnanoToRaw(val).gte(1) && nanocurrency.checkAmount(mnanoToRaw(val).toString(10))) {
+    if (val !== '' && mbtcoToRaw(val).gte(1) && btcocurrency.checkAmount(mbtcoToRaw(val).toString(10))) {
       return true;
     } else {
       return false;
@@ -314,7 +314,7 @@ function isValidNanoAmount(val: string) {
 
 // Check if valid raw amount
 function isValidAmount(val: string) {
-  return nanocurrency.checkAmount(val);
+  return btcocurrency.checkAmount(val);
 }
 
 function getAccountPublicKey(account) {
@@ -323,7 +323,7 @@ function getAccountPublicKey(account) {
   }
   const account_crop = account.length === 64 ? account.substring(4, 64) : account.substring(5, 65);
   const isValid = /^[13456789abcdefghijkmnopqrstuwxyz]+$/.test(account_crop);
-  if (!isValid) throw new Error(`Invalid NANO account`);
+  if (!isValid) throw new Error(`Invalid BTCO account`);
 
   const key_uint4 = array_crop(uint5ToUint4(stringToUint5(account_crop.substring(0, 52))));
   const hash_uint4 = uint5ToUint4(stringToUint5(account_crop.substring(52, 60)));
@@ -336,63 +336,63 @@ function getAccountPublicKey(account) {
 }
 
 function setPrefix(account, prefix = 'xrb') {
-  if (prefix === 'nano') {
-    return account.replace('xrb_', 'nano_');
+  if (prefix === 'btco') {
+    return account.replace('xrb_', 'btco_');
   } else {
-    return account.replace('nano_', 'xrb_');
+    return account.replace('btco_', 'xrb_');
   }
 }
 
 /**
  * Conversion functions
  */
-const mnano = 1000000000000000000000000000000;
-const knano = 1000000000000000000000000000;
-const nano  = 1000000000000000000000000;
-function mnanoToRaw(value) {
-  return new BigNumber(value).times(mnano);
+const mbtco = 1000000000000000000000000000000;
+const kbtco = 1000000000000000000000000000;
+const btco  = 1000000000000000000000000;
+function mbtcoToRaw(value) {
+  return new BigNumber(value).times(mbtco);
 }
-function knanoToRaw(value) {
-  return new BigNumber(value).times(knano);
+function kbtcoToRaw(value) {
+  return new BigNumber(value).times(kbtco);
 }
-function nanoToRaw(value) {
-  return new BigNumber(value).times(nano);
+function btcoToRaw(value) {
+  return new BigNumber(value).times(btco);
 }
-function rawToMnano(value) {
-  return new BigNumber(value).div(mnano);
+function rawToMBtco(value) {
+  return new BigNumber(value).div(mbtco);
 }
-function rawToKnano(value) {
-  return new BigNumber(value).div(knano);
+function rawToKbtco(value) {
+  return new BigNumber(value).div(kbtco);
 }
 function rawToNano(value) {
-  return new BigNumber(value).div(nano);
+  return new BigNumber(value).div(btco);
 }
 
 /**
  * Nano functions
  */
 function isValidSeed(val: string) {
-  return nanocurrency.checkSeed(val);
+  return btcocurrency.checkSeed(val);
 }
 
 function isValidHash(val: string) {
-  return nanocurrency.checkHash(val);
+  return btcocurrency.checkHash(val);
 }
 
 function isValidIndex(val: number) {
-  return nanocurrency.checkIndex(val);
+  return btcocurrency.checkIndex(val);
 }
 
 function isValidSignature(val: string) {
-  return nanocurrency.checkSignature(val);
+  return btcocurrency.checkSignature(val);
 }
 
 function isValidWork(val: string) {
-  return nanocurrency.checkWork(val);
+  return btcocurrency.checkWork(val);
 }
 
 function validateWork(blockHash: string, threshold: string, work: string) {
-  return nanocurrency.validateWork({blockHash: blockHash, threshold: threshold, work: work});
+  return btcocurrency.validateWork({blockHash: blockHash, threshold: threshold, work: work});
 }
 
 function hashStateBlock(block: StateBlock) {
@@ -518,12 +518,12 @@ const util = {
     isValidNanoAmount: isValidNanoAmount,
     isValidAmount: isValidNanoAmount,
   },
-  nano: {
-    mnanoToRaw: mnanoToRaw,
-    knanoToRaw: knanoToRaw,
-    nanoToRaw: nanoToRaw,
-    rawToMnano: rawToMnano,
-    rawToKnano: rawToKnano,
+  btco: {
+    mbtcoToRaw: mbtcoToRaw,
+    kbtcoToRaw: kbtcoToRaw,
+    btcoToRaw: btcoToRaw,
+    rawToMBtco: rawToMBtco,
+    rawToKbtco: rawToKbtco,
     rawToNano: rawToNano,
     hashStateBlock: hashStateBlock,
     isValidSeed: isValidSeed,

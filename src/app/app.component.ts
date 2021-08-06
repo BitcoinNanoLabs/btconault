@@ -45,7 +45,7 @@ export class AppComponent implements OnInit {
 
   wallet = this.walletService.wallet;
   node = this.nodeService.node;
-  nanoPrice = this.price.price;
+  btcoPrice = this.price.price;
   fiatTimeout = 5 * 60 * 1000; // Update fiat prices every 5 minutes
   inactiveSeconds = 0;
   windowHeight = 1000;
@@ -70,7 +70,7 @@ export class AppComponent implements OnInit {
 
     this.updateAppTheme();
 
-    // New for v19: Patch saved xrb_ prefixes to nano_
+    // New for v19: Patch saved xrb_ prefixes to btco_
     await this.patchXrbToNanoPrefixData();
 
     this.addressBook.loadAddressBook();
@@ -167,13 +167,13 @@ export class AppComponent implements OnInit {
 
   /*
     This is important as it looks through saved data using hardcoded xrb_ prefixes
-    (Your wallet, address book, rep list, etc) and updates them to nano_ prefix for v19 RPC
+    (Your wallet, address book, rep list, etc) and updates them to btco_ prefix for v19 RPC
    */
   async patchXrbToNanoPrefixData() {
     // If wallet is version 2, data has already been patched.  Otherwise, patch all data
     if (this.settings.settings.walletVersion >= 2) return;
 
-    await this.walletService.patchOldSavedData(); // Change saved xrb_ addresses to nano_
+    await this.walletService.patchOldSavedData(); // Change saved xrb_ addresses to btco_
     this.addressBook.patchXrbPrefixData();
     this.representative.patchXrbPrefixData();
 
@@ -233,7 +233,7 @@ export class AppComponent implements OnInit {
     const searchData = this.searchData.trim();
     if (!searchData.length) return;
 
-    if (searchData.startsWith('xrb_') || searchData.startsWith('nano_')) {
+    if (searchData.startsWith('xrb_') || searchData.startsWith('btco_')) {
       this.router.navigate(['account', searchData]);
     } else if (searchData.length === 64) {
       this.router.navigate(['transaction', searchData]);

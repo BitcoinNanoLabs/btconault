@@ -1,9 +1,9 @@
 import {Component, Input, OnChanges, HostBinding} from '@angular/core';
 
 @Component({
-  selector: 'app-nano-account-id',
-  templateUrl: './nano-account-id.component.html',
-  styleUrls: ['./nano-account-id.component.css'],
+  selector: 'app-btco-account-id',
+  templateUrl: './btco-account-id.component.html',
+  styleUrls: ['./btco-account-id.component.css'],
 })
 export class NanoAccountIdComponent implements OnChanges {
 
@@ -19,7 +19,7 @@ export class NanoAccountIdComponent implements OnChanges {
 
   ngOnChanges() {
     if (this.middle === 'auto') this.classes = 'uk-flex';
-    if (this.middle === 'break') this.classes = 'nano-address-breakable';
+    if (this.middle === 'break') this.classes = 'btco-address-breakable';
     const accountID = this.accountID;
     const openingChars = 10;
     const closingChars = 5;

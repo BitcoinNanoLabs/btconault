@@ -1,4 +1,4 @@
-// nano-webgl-pow
+// btco-webgl-pow
 // Nano Currency Proof of Work Value generation using WebGL2
 // Author:  numtel <ben@latenightsketches.com>
 // License: MIT

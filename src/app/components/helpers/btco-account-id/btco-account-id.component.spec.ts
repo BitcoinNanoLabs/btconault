@@ -1,6 +1,6 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NanoAccountIdComponent } from './nano-account-id.component';
+import { NanoAccountIdComponent } from './btco-account-id.component';
 
 describe('NanoAccountIdComponent', () => {
   let component: NanoAccountIdComponent;

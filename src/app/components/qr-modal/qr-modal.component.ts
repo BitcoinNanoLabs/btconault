@@ -20,7 +20,7 @@ export class QrModalComponent implements OnInit {
   @Input() type: QRType;
   availableDevices: MediaDeviceInfo[];
   currentDevice: MediaDeviceInfo = null;
-  nano_scheme = /^(xrb|nano|nanorep|nanoseed|nanokey):.+$/g;
+  btco_scheme = /^(xrb|btco|btcorep|btcoseed|btcokey):.+$/g;
 
   formatsEnabled: BarcodeFormat[] = [
     BarcodeFormat.CODE_128,
@@ -63,21 +63,21 @@ export class QrModalComponent implements OnInit {
     } else if (resultString.length === 128) {
       // includes deterministic R value material which we ignore
       resultString = resultString.substring(0, 64);
-      if (this.util.nano.isValidHash(resultString)) {
+      if (this.util.btco.isValidHash(resultString)) {
         type = 'hash';
         content = resultString;
       }
-    } else if (this.util.nano.isValidHash(resultString)) {
+    } else if (this.util.btco.isValidHash(resultString)) {
       type = 'hash';
       content = resultString;
-    } else if (this.nano_scheme.test(resultString)) {
+    } else if (this.btco_scheme.test(resultString)) {
       // This is a valid Nano scheme URI
       const url = new URL(resultString);
       content = url.pathname;
 
-      if (['nano:', 'nanorep:', 'xrb:'].includes(url.protocol) && this.util.account.isValidAccount(url.pathname)) {
+      if (['btco:', 'btcorep:', 'xrb:'].includes(url.protocol) && this.util.account.isValidAccount(url.pathname)) {
         type = 'account';
-      } else if (['nanoseed:', 'nanokey:'].includes(url.protocol) && this.util.nano.isValidHash(url.pathname)) {
+      } else if (['btcoseed:', 'btcokey:'].includes(url.protocol) && this.util.btco.isValidHash(url.pathname)) {
         type = 'hash';
       }
     } else {

@@ -6,9 +6,9 @@ import {ApiService} from '../../services/api.service';
 import {UtilService, TxType} from '../../services/util.service';
 import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
-import {NanoBlockService} from '../../services/nano-block.service';
-import * as nanocurrency from 'nanocurrency';
-import { wallet } from 'nanocurrency-web';
+import {NanoBlockService} from '../../services/btco-block.service';
+import * as btcocurrency from 'btcocurrency';
+import { wallet } from 'btcocurrency-web';
 import * as bip39 from 'bip39';
 import {Router} from '@angular/router';
 
@@ -66,7 +66,7 @@ export class SweeperComponent implements OnInit {
     private api: ApiService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: NanoBlockService,
     private util: UtilService,
     private route: Router) {
       if (this.route.getCurrentNavigation().extras.state && this.route.getCurrentNavigation().extras.state.seed) {
@@ -140,7 +140,7 @@ export class SweeperComponent implements OnInit {
   }
 
   destinationChange(address) {
-    if (nanocurrency.checkAddress(address)) {
+    if (btcocurrency.checkAddress(address)) {
       this.validDestination = true;
     } else {
       this.validDestination = false;
@@ -151,7 +151,7 @@ export class SweeperComponent implements OnInit {
     let invalid = false;
     if (this.util.string.isNumeric(index) && index % 1 === 0) {
       index = parseInt(index, 10);
-      if (!nanocurrency.checkIndex(index)) {
+      if (!btcocurrency.checkIndex(index)) {
         invalid = true;
       }
       if (index > INDEX_MAX) {
@@ -177,7 +177,7 @@ export class SweeperComponent implements OnInit {
     let invalid = false;
     if (this.util.string.isNumeric(index) && index % 1 === 0) {
       index = parseInt(index, 10);
-      if (!nanocurrency.checkIndex(index)) {
+      if (!btcocurrency.checkIndex(index)) {
         invalid = true;
       }
       if (index > INDEX_MAX) {
@@ -216,10 +216,10 @@ export class SweeperComponent implements OnInit {
 
   // Validate type of master key. Seed and private key can't be differentiated
   checkMasterKey(key) {
-    // validate nano seed or private key
+    // validate btco seed or private key
     if (key.length === 64) {
-      if (nanocurrency.checkSeed(key)) {
-        return 'nano_seed';
+      if (btcocurrency.checkSeed(key)) {
+        return 'btco_seed';
       }
     }
     // validate bip39 seed
@@ -248,32 +248,32 @@ export class SweeperComponent implements OnInit {
 
   // Process final send block
   async processSend(privKey, previous, sendCallback) {
-    const pubKey = nanocurrency.derivePublicKey(privKey);
-    const address = nanocurrency.deriveAddress(pubKey, {useNanoPrefix: true});
+    const pubKey = btcocurrency.derivePublicKey(privKey);
+    const address = btcocurrency.deriveAddress(pubKey, {useBtcoPrefix: true});
 
     // make an extra check on valid destination
-    if (this.validDestination && nanocurrency.checkAddress(this.destinationAccount)) {
+    if (this.validDestination && btcocurrency.checkAddress(this.destinationAccount)) {
       this.appendLog('Transfer started: ' + address);
       const work = await this.workPool.getWork(previous, 1); // send threshold
       // create the block with the work found
-      const block = nanocurrency.createBlock(privKey, {balance: '0', representative: this.representative,
+      const block = btcocurrency.createBlock(privKey, {balance: '0', representative: this.representative,
       work: work, link: this.destinationAccount, previous: previous});
-      // replace xrb with nano (old library)
-      block.block.account = block.block.account.replace('xrb', 'nano');
-      block.block.link_as_account = block.block.link_as_account.replace('xrb', 'nano');
+      // replace xrb with btco (old library)
+      block.block.account = block.block.account.replace('xrb', 'btco');
+      block.block.link_as_account = block.block.link_as_account.replace('xrb', 'btco');
 
       // publish block for each iteration
       const data = await this.api.process(block.block, TxType.send);
       if (data.hash) {
         const blockInfo = await this.api.blockInfo(data.hash);
-        let nanoAmountSent = null;
+        let btcoAmountSent = null;
         if (blockInfo.amount) {
-          nanoAmountSent = this.util.nano.rawToMnano(blockInfo.amount);
-          this.totalSwept = this.util.big.add(this.totalSwept, nanoAmountSent);
+          btcoAmountSent = this.util.btco.rawToMBtco(blockInfo.amount);
+          this.totalSwept = this.util.big.add(this.totalSwept, btcoAmountSent);
         }
         this.notificationService.sendInfo('Account ' + address + ' was swept and ' +
-        (nanoAmountSent ? (nanoAmountSent.toString(10) + ' Nano') : '') + ' transferred to ' + this.destinationAccount, {length: 15000});
-        this.appendLog('Funds transferred ' + (nanoAmountSent ? ('(' + nanoAmountSent.toString(10) + ' Nano)') : '') + ': ' + data.hash);
+        (btcoAmountSent ? (btcoAmountSent.toString(10) + ' Nano') : '') + ' transferred to ' + this.destinationAccount, {length: 15000});
+        this.appendLog('Funds transferred ' + (btcoAmountSent ? ('(' + btcoAmountSent.toString(10) + ' Nano)') : '') + ': ' + data.hash);
         console.log(this.adjustedBalance + ' raw transferred to ' + this.destinationAccount);
       } else {
         this.notificationService.sendWarning(`Failed processing block.`);
@@ -306,11 +306,11 @@ export class SweeperComponent implements OnInit {
       }
       const work = await this.workPool.getWork(workInputHash, 1 / 64); // receive threshold
       // create the block with the work found
-      const block = nanocurrency.createBlock(this.privKey, {balance: this.adjustedBalance, representative: this.representative,
+      const block = btcocurrency.createBlock(this.privKey, {balance: this.adjustedBalance, representative: this.representative,
       work: work, link: key, previous: this.previous});
-      // replace xrb with nano (old library)
-      block.block.account = block.block.account.replace('xrb', 'nano');
-      block.block.link_as_account = block.block.link_as_account.replace('xrb', 'nano');
+      // replace xrb with btco (old library)
+      block.block.account = block.block.account.replace('xrb', 'btco');
+      block.block.link_as_account = block.block.link_as_account.replace('xrb', 'btco');
       // new previous
       this.previous = block.hash;
 
@@ -356,7 +356,7 @@ export class SweeperComponent implements OnInit {
     // check for pending first
     let data = null;
     if (this.appSettings.settings.minimumReceive) {
-      const minAmount = this.util.nano.mnanoToRaw(this.appSettings.settings.minimumReceive).toString(10);
+      const minAmount = this.util.btco.mbtcoToRaw(this.appSettings.settings.minimumReceive).toString(10);
       if (this.appSettings.settings.pendingOption === 'amount') {
         data = await this.api.pendingLimitSorted(address, this.maxIncoming, minAmount);
       } else {
@@ -378,9 +378,9 @@ export class SweeperComponent implements OnInit {
       Object.keys(data.blocks).forEach(function(key) {
         raw = this.util.big.add(raw, data.blocks[key].amount);
       }.bind(this));
-      const nanoAmount = this.util.nano.rawToMnano(raw);
-      const pending = {count: Object.keys(data.blocks).length, raw: raw, NANO: nanoAmount, blocks: data.blocks};
-      const row = 'Found ' + pending.count + ' pending containing total ' + pending.NANO + ' NANO';
+      const btcoAmount = this.util.btco.rawToMBtco(raw);
+      const pending = {count: Object.keys(data.blocks).length, raw: raw, BTCO: btcoAmount, blocks: data.blocks};
+      const row = 'Found ' + pending.count + ' pending containing total ' + pending.BTCO + ' BTCO';
       this.appendLog(row);
 
       // create receive blocks for all pending
@@ -409,14 +409,14 @@ export class SweeperComponent implements OnInit {
       return;
     }
 
-    this.pubKey = nanocurrency.derivePublicKey(privKey);
-    const address = nanocurrency.deriveAddress(this.pubKey, {useNanoPrefix: true});
+    this.pubKey = btcocurrency.derivePublicKey(privKey);
+    const address = btcocurrency.deriveAddress(this.pubKey, {useBtcoPrefix: true});
 
     // get account info required to build the block
     let balance = 0; // balance will be 0 if open block
     this.adjustedBalance = balance.toString();
     let previous = null; // previous is null if we create open block
-    this.representative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
+    this.representative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
     let subType = 'open';
 
     // retrive from RPC
@@ -488,7 +488,7 @@ export class SweeperComponent implements OnInit {
       if (keyType === 'mnemonic') {
         seed = bip39.mnemonicToEntropy(this.sourceWallet).toUpperCase();
         bip39Seed = this.util.string.mnemonicToSeedSync(this.sourceWallet).toString('hex');
-        // Seed must be 64 for regular nano blake derivation to happen
+        // Seed must be 64 for regular btco blake derivation to happen
         // For other lengths, only bip39/44 derivation is possible
         if (seed.length !== 32 && seed.length !== 40 && seed.length !== 48 && seed.length !== 56 && seed.length !== 64) {
           this.notificationService.sendError(`Mnemonic not 12,15,18,21 or 24 words`);
@@ -496,8 +496,8 @@ export class SweeperComponent implements OnInit {
         }
       }
 
-      // nano seed or private key
-      if (keyType === 'nano_seed' || seed !== '' || keyType === 'bip39_seed') {
+      // btco seed or private key
+      if (keyType === 'btco_seed' || seed !== '' || keyType === 'bip39_seed') {
         // check if a private key first (no index)
         this.appendLog('Checking if input is a private key');
         if (seed === '') { // seed from input, no mnemonic
@@ -509,12 +509,12 @@ export class SweeperComponent implements OnInit {
           // start with blake2b derivation (but not if the mnemonic is anything other than 24 words)
           if (keyType !== 'bip39_seed' && seed.length === 64) {
             for (let i = parseInt(this.startIndex, 10); i <= parseInt(this.endIndex, 10); i++) {
-              privKey = nanocurrency.deriveSecretKey(seed, i);
+              privKey = btcocurrency.deriveSecretKey(seed, i);
               privKeys.push([privKey, 'blake2b', i]);
             }
           }
           // also check all indexes using bip39/44 derivation
-          // take 128 char bip39 seed directly from input or convert it from a 64 char nano seed (entropy)
+          // take 128 char bip39 seed directly from input or convert it from a 64 char btco seed (entropy)
           if (keyType === 'bip39_seed') {
             bip39Seed = this.sourceWallet;
           } else if (seed.length === 64) {

@@ -467,21 +467,7 @@ export class RepresentativeService {
       name: 'Bitcoin Nano Foundation #5',
       warn: true,
     },
-    {
-      id: 'btco_1awsn43we17c1oshdru4azeqjz9wii41dy8npubm4rg11so7dx3jtqgoeahy',
-      name: 'Nano Foundation #6',
-      warn: true,
-    },
-    {
-      id: 'btco_1anrzcuwe64rwxzcco8dkhpyxpi8kd7zsjc1oeimpc3ppca4mrjtwnqposrs',
-      name: 'Nano Foundation #7',
-      warn: true,
-    },
-    {
-      id: 'btco_1hza3f7wiiqa7ig3jczyxj5yo86yegcmqk3criaz838j91sxcckpfhbhhra1',
-      name: 'Nano Foundation #8',
-      warn: true,
-    },
+
   ];
 
 }

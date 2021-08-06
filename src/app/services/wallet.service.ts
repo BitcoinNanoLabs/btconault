@@ -7,7 +7,7 @@ import {AddressBookService} from './address-book.service';
 import * as CryptoJS from 'crypto-js';
 import {WorkPoolService} from './work-pool.service';
 import {WebsocketService} from './websocket.service';
-import {NanoBlockService} from './nano-block.service';
+import {NanoBlockService} from './btco-block.service';
 import {NotificationService} from './notification.service';
 import {AppSettingsService} from './app-settings.service';
 import {PriceService} from './price.service';
@@ -82,8 +82,8 @@ export interface WalletApiAccount extends BaseApiAccount {
 
 @Injectable()
 export class WalletService {
-  nano = 1000000000000000000000000;
-  storeKey = `nanovault-wallet`;
+  btco = 1000000000000000000000000;
+  storeKey = `btcovault-wallet`;
 
   wallet: FullWallet = {
     type: 'seed',
@@ -120,7 +120,7 @@ export class WalletService {
     private price: PriceService,
     private workPool: WorkPoolService,
     private websocket: WebsocketService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: NanoBlockService,
     private ledgerService: LedgerService,
     private notifications: NotificationService) {
     this.websocket.newTransactions$.subscribe(async (transaction) => {
@@ -135,7 +135,7 @@ export class WalletService {
       if (transaction.block.type === 'state' && transaction.block.subtype === 'send'
       && walletAccountIDs.indexOf(transaction.block.link_as_account) !== -1) {
         if (this.appSettings.settings.minimumReceive) {
-          const minAmount = this.util.nano.mnanoToRaw(this.appSettings.settings.minimumReceive);
+          const minAmount = this.util.btco.mbtcoToRaw(this.appSettings.settings.minimumReceive);
           if ((new BigNumber(transaction.amount)).gte(minAmount)) {
             shouldNotify = true;
           }
@@ -185,7 +185,7 @@ export class WalletService {
       let aboveMinimumReceive = true;
 
       if (this.appSettings.settings.minimumReceive) {
-        const minAmount = this.util.nano.mnanoToRaw(this.appSettings.settings.minimumReceive);
+        const minAmount = this.util.btco.mbtcoToRaw(this.appSettings.settings.minimumReceive);
         aboveMinimumReceive = txAmount.gte(minAmount);
       }
 
@@ -194,8 +194,8 @@ export class WalletService {
 
         if (isNewBlock === true) {
           this.wallet.pending = this.wallet.pending.plus(txAmount);
-          this.wallet.pendingRaw = this.wallet.pendingRaw.plus(txAmount.mod(this.nano));
-          this.wallet.pendingFiat += this.util.nano.rawToMnano(txAmount).times(this.price.price.lastPrice).toNumber();
+          this.wallet.pendingRaw = this.wallet.pendingRaw.plus(txAmount.mod(this.btco));
+          this.wallet.pendingFiat += this.util.btco.rawToMBtco(txAmount).times(this.price.price.lastPrice).toNumber();
           this.wallet.hasPending = true;
         }
       }
@@ -229,7 +229,7 @@ export class WalletService {
     if (walletJson.accounts) {
       const newAccounts = walletJson.accounts.map(account => {
         if (account.id.indexOf('xrb_') !== -1) {
-          account.id = account.id.replace('xrb_', 'nano_');
+          account.id = account.id.replace('xrb_', 'btco_');
         }
         return account;
       });
@@ -411,7 +411,7 @@ export class WalletService {
 
         } else if (this.wallet.type === 'ledger') {
           const account: any = await this.ledgerService.getLedgerAccount(index);
-          accountAddress = account.address.replace('xrb_', 'nano_');
+          accountAddress = account.address.replace('xrb_', 'btco_');
           accountPublicKey = account.publicKey.toUpperCase();
 
         } else {
@@ -489,11 +489,11 @@ export class WalletService {
     const account: any = await this.ledgerService.getLedgerAccount(index);
 
     const accountID = account.address;
-    const nanoAccountID = accountID.replace('xrb_', 'nano_');
-    const addressBookName = this.addressBook.getAccountName(nanoAccountID);
+    const btcoAccountID = accountID.replace('xrb_', 'btco_');
+    const addressBookName = this.addressBook.getAccountName(btcoAccountID);
 
     const newAccount: WalletAccount = {
-      id: nanoAccountID,
+      id: btcoAccountID,
       frontier: null,
       secret: null,
       keyPair: null,
@@ -611,12 +611,12 @@ export class WalletService {
     const fiatPrice = this.price.price.lastPrice;
 
     this.wallet.accounts.forEach(account => {
-      account.balanceFiat = this.util.nano.rawToMnano(account.balance).times(fiatPrice).toNumber();
-      account.pendingFiat = this.util.nano.rawToMnano(account.pending).times(fiatPrice).toNumber();
+      account.balanceFiat = this.util.btco.rawToMBtco(account.balance).times(fiatPrice).toNumber();
+      account.pendingFiat = this.util.btco.rawToMBtco(account.pending).times(fiatPrice).toNumber();
     });
 
-    this.wallet.balanceFiat = this.util.nano.rawToMnano(this.wallet.balance).times(fiatPrice).toNumber();
-    this.wallet.pendingFiat = this.util.nano.rawToMnano(this.wallet.pending).times(fiatPrice).toNumber();
+    this.wallet.balanceFiat = this.util.btco.rawToMBtco(this.wallet.balance).times(fiatPrice).toNumber();
+    this.wallet.pendingFiat = this.util.btco.rawToMBtco(this.wallet.pending).times(fiatPrice).toNumber();
   }
 
   resetBalances() {
@@ -668,9 +668,9 @@ export class WalletService {
       walletAccount.balance = new BigNumber(accounts.balances[accountID].balance);
       const accountBalancePendingInclUnconfirmed = new BigNumber(accounts.balances[accountID].pending);
 
-      walletAccount.balanceRaw = new BigNumber(walletAccount.balance).mod(this.nano);
+      walletAccount.balanceRaw = new BigNumber(walletAccount.balance).mod(this.btco);
 
-      walletAccount.balanceFiat = this.util.nano.rawToMnano(walletAccount.balance).times(fiatPrice).toNumber();
+      walletAccount.balanceFiat = this.util.btco.rawToMBtco(walletAccount.balance).times(fiatPrice).toNumber();
 
       walletAccount.frontier = frontiers.frontiers[accountID] || null;
 
@@ -682,7 +682,7 @@ export class WalletService {
       let pending;
 
       if (this.appSettings.settings.minimumReceive) {
-        const minAmount = this.util.nano.mnanoToRaw(this.appSettings.settings.minimumReceive);
+        const minAmount = this.util.btco.mbtcoToRaw(this.appSettings.settings.minimumReceive);
         pending = await this.api.accountsPendingLimitSorted(this.wallet.accounts.map(a => a.id), minAmount.toString(10));
       } else {
         pending = await this.api.accountsPendingSorted(this.wallet.accounts.map(a => a.id));
@@ -719,8 +719,8 @@ export class WalletService {
             }
 
             walletAccount.pending = accountPending;
-            walletAccount.pendingRaw = accountPending.mod(this.nano);
-            walletAccount.pendingFiat = this.util.nano.rawToMnano(accountPending).times(fiatPrice).toNumber();
+            walletAccount.pendingRaw = accountPending.mod(this.btco);
+            walletAccount.pendingFiat = this.util.btco.rawToMBtco(accountPending).times(fiatPrice).toNumber();
 
             // If there is a pending, it means we want to add to work cache as receive-threshold
             if (walletAccount.pending.gt(0)) {
@@ -767,11 +767,11 @@ export class WalletService {
     this.wallet.balance = walletBalance;
     this.wallet.pending = walletPendingAboveThresholdConfirmed;
 
-    this.wallet.balanceRaw = new BigNumber(walletBalance).mod(this.nano);
-    this.wallet.pendingRaw = new BigNumber(walletPendingAboveThresholdConfirmed).mod(this.nano);
+    this.wallet.balanceRaw = new BigNumber(walletBalance).mod(this.btco);
+    this.wallet.pendingRaw = new BigNumber(walletPendingAboveThresholdConfirmed).mod(this.btco);
 
-    this.wallet.balanceFiat = this.util.nano.rawToMnano(walletBalance).times(fiatPrice).toNumber();
-    this.wallet.pendingFiat = this.util.nano.rawToMnano(walletPendingAboveThresholdConfirmed).times(fiatPrice).toNumber();
+    this.wallet.balanceFiat = this.util.btco.rawToMBtco(walletBalance).times(fiatPrice).toNumber();
+    this.wallet.pendingFiat = this.util.btco.rawToMBtco(walletPendingAboveThresholdConfirmed).times(fiatPrice).toNumber();
 
     // tslint:disable-next-line
     this.wallet.hasPending = walletPendingAboveThresholdConfirmed.gt(0);
@@ -915,12 +915,12 @@ export class WalletService {
       return; // Dispose of the block, no matching account
     }
 
-    const newHash = await this.nanoBlock.generateReceive(walletAccount, nextBlock.hash, this.isLedgerWallet());
+    const newHash = await this.btcoBlock.generateReceive(walletAccount, nextBlock.hash, this.isLedgerWallet());
     if (newHash) {
       if (this.successfulBlocks.length >= 15) this.successfulBlocks.shift();
       this.successfulBlocks.push(nextBlock.hash);
 
-      const receiveAmount = this.util.nano.rawToMnano(nextBlock.amount);
+      const receiveAmount = this.util.btco.rawToMBtco(nextBlock.amount);
       this.notifications.removeNotification('success-receive');
       this.notifications.sendSuccess(`Successfully received ${receiveAmount.isZero() ? '' : receiveAmount.toFixed(6)} Nano!`, { identifier: 'success-receive' });
 

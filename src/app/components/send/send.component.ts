@@ -10,7 +10,7 @@ import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {ActivatedRoute} from '@angular/router';
 import {PriceService} from '../../services/price.service';
-import {NanoBlockService} from '../../services/nano-block.service';
+import {NanoBlockService} from '../../services/btco-block.service';
 import { QrModalService } from '../../services/qr-modal.service';
 import { environment } from 'environments/environment';
 
@@ -22,7 +22,7 @@ const nacl = window['nacl'];
   styleUrls: ['./send.component.css']
 })
 export class SendComponent implements OnInit {
-  nano = 1000000000000000000000000;
+  btco = 1000000000000000000000000;
 
   activePanel = 'send';
   sendDestinationType = 'external-address';
@@ -33,9 +33,9 @@ export class SendComponent implements OnInit {
   addressBookMatch = '';
 
   amounts = [
-    { name: 'NANO', shortName: 'NANO', value: 'mnano' },
-    { name: 'knano', shortName: 'knano', value: 'knano' },
-    { name: 'nano', shortName: 'nano', value: 'nano' },
+    { name: 'BTCO', shortName: 'BTCO', value: 'mbtco' },
+    { name: 'kbtco', shortName: 'kbtco', value: 'kbtco' },
+    { name: 'btco', shortName: 'btco', value: 'btco' },
   ];
   selectedAmount = this.amounts[0];
 
@@ -62,7 +62,7 @@ export class SendComponent implements OnInit {
     private addressBookService: AddressBookService,
     private notificationService: NotificationService,
     private nodeApi: ApiService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: NanoBlockService,
     public price: PriceService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
@@ -152,24 +152,24 @@ export class SendComponent implements OnInit {
     const precision = this.settings.settings.displayCurrency === 'BTC' ? 1000000 : 100;
 
     // Determine fiat value of the amount
-    const fiatAmount = this.util.nano.rawToMnano(rawAmount).times(this.price.price.lastPrice)
+    const fiatAmount = this.util.btco.rawToMBtco(rawAmount).times(this.price.price.lastPrice)
       .times(precision).floor().div(precision).toNumber();
 
     this.amountFiat = fiatAmount;
   }
 
-  // An update to the fiat amount, sync the nano value based on currently selected denomination
+  // An update to the fiat amount, sync the btco value based on currently selected denomination
   syncNanoPrice() {
     if (!this.amountFiat) {
       this.amount = '';
       return;
     }
     if (!this.util.string.isNumeric(this.amountFiat)) return;
-    const rawAmount = this.util.nano.mnanoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const nanoVal = this.util.nano.rawToNano(rawAmount).floor();
-    const nanoAmount = this.getAmountValueFromBase(this.util.nano.nanoToRaw(nanoVal));
+    const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
+    const btcoVal = this.util.btco.rawToNano(rawAmount).floor();
+    const btcoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
 
-    this.amount = nanoAmount.toNumber();
+    this.amount = btcoAmount.toNumber();
   }
 
   searchAddressBook() {
@@ -265,7 +265,7 @@ export class SendComponent implements OnInit {
       return this.notificationService.sendWarning(`From and to account are required`);
     }
     if (!this.validateAmount()) {
-      return this.notificationService.sendWarning(`Invalid NANO Amount`);
+      return this.notificationService.sendWarning(`Invalid BTCO Amount`);
     }
 
     this.preparingTransaction = true;
@@ -288,20 +288,20 @@ export class SendComponent implements OnInit {
     const rawAmount = this.getAmountBaseValue(this.amount || 0);
     this.rawAmount = rawAmount.plus(this.amountRaw);
 
-    const nanoAmount = this.rawAmount.div(this.nano);
+    const btcoAmount = this.rawAmount.div(this.btco);
 
     if (this.amount < 0 || rawAmount.lessThan(0)) {
       return this.notificationService.sendWarning(`Amount is invalid`);
     }
     if (from.balanceBN.minus(rawAmount).lessThan(0)) {
-      return this.notificationService.sendError(`From account does not have enough NANO`);
+      return this.notificationService.sendError(`From account does not have enough BTCO`);
     }
 
     // Determine a proper raw amount to show in the UI, if a decimal was entered
-    this.amountRaw = this.rawAmount.mod(this.nano);
+    this.amountRaw = this.rawAmount.mod(this.btco);
 
     // Determine fiat value of the amount
-    this.amountFiat = this.util.nano.rawToMnano(rawAmount).times(this.price.price.lastPrice).toNumber();
+    this.amountFiat = this.util.btco.rawToMBtco(rawAmount).times(this.price.price.lastPrice).toNumber();
 
     // Start precomputing the work...
     this.fromAddressBook = this.addressBookService.getAccountName(this.fromAccountID);
@@ -325,7 +325,7 @@ export class SendComponent implements OnInit {
     try {
       const destinationID = this.getDestinationID();
 
-      const newHash = await this.nanoBlock.generateSend(walletAccount, destinationID,
+      const newHash = await this.btcoBlock.generateSend(walletAccount, destinationID,
         this.rawAmount, this.walletService.isLedgerWallet());
 
       if (newHash) {
@@ -364,8 +364,8 @@ export class SendComponent implements OnInit {
 
     this.amountRaw = walletAccount.balanceRaw;
 
-    const nanoVal = this.util.nano.rawToNano(walletAccount.balance).floor();
-    const maxAmount = this.getAmountValueFromBase(this.util.nano.nanoToRaw(nanoVal));
+    const btcoVal = this.util.btco.rawToNano(walletAccount.balance).floor();
+    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
     this.amount = maxAmount.toNumber();
     this.syncFiatPrice();
   }
@@ -378,18 +378,18 @@ export class SendComponent implements OnInit {
 
     switch (this.selectedAmount.value) {
       default:
-      case 'nano': return this.util.nano.nanoToRaw(value);
-      case 'knano': return this.util.nano.knanoToRaw(value);
-      case 'mnano': return this.util.nano.mnanoToRaw(value);
+      case 'btco': return this.util.btco.btcoToRaw(value);
+      case 'kbtco': return this.util.btco.kbtcoToRaw(value);
+      case 'mbtco': return this.util.btco.mbtcoToRaw(value);
     }
   }
 
   getAmountValueFromBase(value) {
     switch (this.selectedAmount.value) {
       default:
-      case 'nano': return this.util.nano.rawToNano(value);
-      case 'knano': return this.util.nano.rawToKnano(value);
-      case 'mnano': return this.util.nano.rawToMnano(value);
+      case 'btco': return this.util.btco.rawToNano(value);
+      case 'kbtco': return this.util.btco.rawToKbtco(value);
+      case 'mbtco': return this.util.btco.rawToMBtco(value);
     }
   }
 

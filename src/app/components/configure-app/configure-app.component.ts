@@ -41,9 +41,9 @@ export class ConfigureAppComponent implements OnInit {
   wallet = this.walletService.wallet;
 
   denominations = [
-    { name: 'NANO', value: 'mnano' },
-    { name: 'knano', value: 'knano' },
-    { name: 'nano', value: 'nano' },
+    { name: 'BTCO', value: 'mbtco' },
+    { name: 'kbtco', value: 'kbtco' },
+    { name: 'btco', value: 'btco' },
   ];
   selectedDenomination = this.denominations[0].value;
 
@@ -132,7 +132,7 @@ export class ConfigureAppComponent implements OnInit {
 
   // prefixOptions = [
   //   { name: 'xrb_', value: 'xrb' },
-  //   { name: 'nano_', value: 'nano' },
+  //   { name: 'btco_', value: 'btco' },
   // ];
   // selectedPrefix = this.prefixOptions[0].value;
 
@@ -218,8 +218,8 @@ export class ConfigureAppComponent implements OnInit {
 
     try {
       const quorumData = await this.api.confirmationQuorum();
-      this.peersStakeReq = quorumData ? Number(this.util.nano.rawToMnano(quorumData.peers_stake_required)).toLocaleString('en-US') : null;
-      this.peersStakeTotal = quorumData ? Number(this.util.nano.rawToMnano(quorumData.peers_stake_total)).toLocaleString('en-US') : null;
+      this.peersStakeReq = quorumData ? Number(this.util.btco.rawToMBtco(quorumData.peers_stake_required)).toLocaleString('en-US') : null;
+      this.peersStakeTotal = quorumData ? Number(this.util.btco.rawToMBtco(quorumData.peers_stake_total)).toLocaleString('en-US') : null;
     } catch {console.warn('Failed to get node stats: confirmation quorum'); }
 
     try {

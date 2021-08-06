@@ -4,7 +4,7 @@ import {AddressBookService} from '../../services/address-book.service';
 import {ApiService} from '../../services/api.service';
 import {NotificationService} from '../../services/notification.service';
 import {WalletService} from '../../services/wallet.service';
-import {NanoBlockService} from '../../services/nano-block.service';
+import {NanoBlockService} from '../../services/btco-block.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {PriceService} from '../../services/price.service';
 import {UtilService} from '../../services/util.service';
@@ -12,7 +12,7 @@ import * as QRCode from 'qrcode';
 import BigNumber from 'bignumber.js';
 import {RepresentativeService} from '../../services/representative.service';
 import {BehaviorSubject} from 'rxjs';
-import * as nanocurrency from 'nanocurrency';
+import * as btcocurrency from 'btcocurrency';
 import {NinjaService} from '../../services/ninja.service';
 import { QrModalService } from '../../services/qr-modal.service';
 
@@ -22,7 +22,7 @@ import { QrModalService } from '../../services/qr-modal.service';
   styleUrls: ['./account-details.component.css']
 })
 export class AccountDetailsComponent implements OnInit, OnDestroy {
-  nano = 1000000000000000000000000;
+  btco = 1000000000000000000000000;
   zeroHash = '0000000000000000000000000000000000000000000000000000000000000000';
 
   accountHistory: any[] = [];
@@ -64,9 +64,9 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   showAddressBook = false;
   addressBookMatch = '';
   amounts = [
-    { name: 'NANO', shortName: 'NANO', value: 'mnano' },
-    { name: 'knano', shortName: 'knano', value: 'knano' },
-    { name: 'nano', shortName: 'nano', value: 'nano' },
+    { name: 'BTCO', shortName: 'BTCO', value: 'mbtco' },
+    { name: 'kbtco', shortName: 'kbtco', value: 'kbtco' },
+    { name: 'btco', shortName: 'btco', value: 'btco' },
   ];
   selectedAmount = this.amounts[0];
 
@@ -104,7 +104,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     private wallet: WalletService,
     private util: UtilService,
     public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: NanoBlockService,
     private qrModalService: QrModalService,
     private ninja: NinjaService) {
       // to detect when the account changes if the view is already active
@@ -127,8 +127,8 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       }
     });
     this.priceSub = this.price.lastPrice$.subscribe(event => {
-      this.account.balanceFiat = this.util.nano.rawToMnano(this.account.balance || 0).times(this.price.price.lastPrice).toNumber();
-      this.account.pendingFiat = this.util.nano.rawToMnano(this.account.pending || 0).times(this.price.price.lastPrice).toNumber();
+      this.account.balanceFiat = this.util.btco.rawToMBtco(this.account.balance || 0).times(this.price.price.lastPrice).toNumber();
+      this.account.pendingFiat = this.util.btco.rawToMBtco(this.account.pending || 0).times(this.price.price.lastPrice).toNumber();
     });
 
     const UIkit = window['UIkit'];
@@ -273,7 +273,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       let pending;
 
       if (this.settings.settings.minimumReceive) {
-        const minAmount = this.util.nano.mnanoToRaw(this.settings.settings.minimumReceive);
+        const minAmount = this.util.btco.mbtcoToRaw(this.settings.settings.minimumReceive);
         pending = await this.api.pendingLimitSorted(this.accountID, 50, minAmount.toString(10));
       } else {
         pending = await this.api.pendingSorted(this.accountID, 50);
@@ -285,7 +285,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
           this.pendingBlocks.push({
             account: pending.blocks[block].source,
             amount: pending.blocks[block].amount,
-            amountRaw: new BigNumber( pending.blocks[block].amount || 0 ).mod(this.nano),
+            amountRaw: new BigNumber( pending.blocks[block].amount || 0 ).mod(this.btco),
             local_timestamp: pending.blocks[block].local_timestamp,
             addressBookName: this.addressBook.getAccountName(pending.blocks[block].source) || null,
             hash: block,
@@ -310,10 +310,10 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     }
 
     // Set fiat values?
-    this.account.balanceRaw = new BigNumber(this.account.balance || 0).mod(this.nano);
-    this.account.pendingRaw = new BigNumber(this.account.pending || 0).mod(this.nano);
-    this.account.balanceFiat = this.util.nano.rawToMnano(this.account.balance || 0).times(this.price.price.lastPrice).toNumber();
-    this.account.pendingFiat = this.util.nano.rawToMnano(this.account.pending || 0).times(this.price.price.lastPrice).toNumber();
+    this.account.balanceRaw = new BigNumber(this.account.balance || 0).mod(this.btco);
+    this.account.pendingRaw = new BigNumber(this.account.pending || 0).mod(this.btco);
+    this.account.balanceFiat = this.util.btco.rawToMBtco(this.account.balance || 0).times(this.price.price.lastPrice).toNumber();
+    this.account.pendingFiat = this.util.btco.rawToMBtco(this.account.pending || 0).times(this.price.price.lastPrice).toNumber();
     await this.getAccountHistory(this.accountID);
 
     this.loadingAccountDetails = false;
@@ -481,7 +481,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const precision = this.settings.settings.displayCurrency === 'BTC' ? 1000000 : 100;
 
     // Determine fiat value of the amount
-    const fiatAmount = this.util.nano.rawToMnano(rawAmount)
+    const fiatAmount = this.util.btco.rawToMBtco(rawAmount)
     .times(this.price.price.lastPrice)
     .times(precision)
     .floor().div(precision).toNumber();
@@ -489,18 +489,18 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.amountFiat = fiatAmount;
   }
 
-  // An update to the fiat amount, sync the nano value based on currently selected denomination
+  // An update to the fiat amount, sync the btco value based on currently selected denomination
   syncNanoPrice() {
     if (!this.amountFiat) {
       this.amount = '';
       return;
     }
     if (!this.util.string.isNumeric(this.amountFiat)) return;
-    const rawAmount = this.util.nano.mnanoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const nanoVal = this.util.nano.rawToNano(rawAmount).floor();
-    const nanoAmount = this.getAmountValueFromBase(this.util.nano.nanoToRaw(nanoVal));
+    const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
+    const btcoVal = this.util.btco.rawToNano(rawAmount).floor();
+    const btcoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
 
-    this.amount = nanoAmount.toNumber();
+    this.amount = btcoAmount.toNumber();
   }
 
   searchAddressBook() {
@@ -559,9 +559,9 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   }
 
   setMaxAmount() {
-    this.amountRaw = this.account.balance ? new BigNumber(this.account.balance).mod(this.nano) : new BigNumber(0);
-    const nanoVal = this.util.nano.rawToNano(this.account.balance).floor();
-    const maxAmount = this.getAmountValueFromBase(this.util.nano.nanoToRaw(nanoVal));
+    this.amountRaw = this.account.balance ? new BigNumber(this.account.balance).mod(this.btco) : new BigNumber(0);
+    const btcoVal = this.util.btco.rawToNano(this.account.balance).floor();
+    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
     this.amount = maxAmount.toNumber();
     this.syncFiatPrice();
   }
@@ -570,18 +570,18 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
     switch (this.selectedAmount.value) {
       default:
-      case 'nano': return this.util.nano.nanoToRaw(value);
-      case 'knano': return this.util.nano.knanoToRaw(value);
-      case 'mnano': return this.util.nano.mnanoToRaw(value);
+      case 'btco': return this.util.btco.btcoToRaw(value);
+      case 'kbtco': return this.util.btco.kbtcoToRaw(value);
+      case 'mbtco': return this.util.btco.mbtcoToRaw(value);
     }
   }
 
   getAmountValueFromBase(value) {
     switch (this.selectedAmount.value) {
       default:
-      case 'nano': return this.util.nano.rawToNano(value);
-      case 'knano': return this.util.nano.rawToKnano(value);
-      case 'mnano': return this.util.nano.rawToMnano(value);
+      case 'btco': return this.util.btco.rawToNano(value);
+      case 'kbtco': return this.util.btco.rawToKbtco(value);
+      case 'mbtco': return this.util.btco.rawToMBtco(value);
     }
   }
 
@@ -593,7 +593,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     }
     pendingBlock.loading = true;
 
-    const newBlock = await this.nanoBlock.generateReceive(this.walletAccount, sourceBlock, this.wallet.isLedgerWallet());
+    const newBlock = await this.btcoBlock.generateReceive(this.walletAccount, sourceBlock, this.wallet.isLedgerWallet());
 
     if (newBlock) {
       pendingBlock.received = true;
@@ -616,7 +616,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const isValid = this.util.account.isValidAccount(this.toAccountID);
     if (!isValid) return this.notifications.sendWarning(`To account address is not valid`);
     if (!this.accountID || !this.toAccountID) return this.notifications.sendWarning(`From and to account are required`);
-    if (!this.validateAmount()) return this.notifications.sendWarning(`Invalid NANO Amount`);
+    if (!this.validateAmount()) return this.notifications.sendWarning(`Invalid BTCO Amount`);
 
     this.qrCodeImageBlock = null;
 
@@ -633,30 +633,30 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const rawAmount = this.getAmountBaseValue(this.amount || 0);
     this.rawAmount = rawAmount.plus(this.amountRaw);
 
-    const nanoAmount = this.rawAmount.div(this.nano);
+    const btcoAmount = this.rawAmount.div(this.btco);
 
     if (this.amount < 0 || rawAmount.lessThan(0)) return this.notifications.sendWarning(`Amount is invalid`);
-    if (from.balanceBN.minus(rawAmount).lessThan(0)) return this.notifications.sendError(`From account does not have enough NANO`);
+    if (from.balanceBN.minus(rawAmount).lessThan(0)) return this.notifications.sendError(`From account does not have enough BTCO`);
 
     // Determine a proper raw amount to show in the UI, if a decimal was entered
-    this.amountRaw = this.rawAmount.mod(this.nano);
+    this.amountRaw = this.rawAmount.mod(this.btco);
 
     // Determine fiat value of the amount
-    this.amountFiat = this.util.nano.rawToMnano(rawAmount).times(this.price.price.lastPrice).toNumber();
+    this.amountFiat = this.util.btco.rawToMBtco(rawAmount).times(this.price.price.lastPrice).toNumber();
 
     const remaining = new BigNumber(from.balance).minus(this.rawAmount);
     const remainingDecimal = remaining.toString(10);
 
-    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
+    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
     const representative = from.representative || defaultRepresentative;
     const blockData = {
-      account: this.accountID.replace('xrb_', 'nano_').toLowerCase(),
+      account: this.accountID.replace('xrb_', 'btco_').toLowerCase(),
       previous: from.frontier,
       representative: representative,
       balance: remainingDecimal,
       link: this.util.account.getAccountPublicKey(this.toAccountID),
     };
-    this.blockHash = nanocurrency.hashBlock({
+    this.blockHash = btcocurrency.hashBlock({
       account: blockData.account,
       link: blockData.link,
       previous: blockData.previous,
@@ -671,7 +671,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     if (!('contents' in previousBlockInfo)) return this.notifications.sendError(`Previous block not found`);
     const jsonBlock = JSON.parse(previousBlockInfo.contents);
     const blockDataPrevious = {
-      account: jsonBlock.account.replace('xrb_', 'nano_').toLowerCase(),
+      account: jsonBlock.account.replace('xrb_', 'btco_').toLowerCase(),
       previous: jsonBlock.previous,
       representative: jsonBlock.representative,
       balance: jsonBlock.balance,
@@ -680,7 +680,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     };
 
     // Nano signing standard
-    this.qrString = 'nanosign:{"block":' + JSON.stringify(blockData) + ',"previous":' + JSON.stringify(blockDataPrevious) + '}';
+    this.qrString = 'btcosign:{"block":' + JSON.stringify(blockData) + ',"previous":' + JSON.stringify(blockDataPrevious) + '}';
     const qrCode = await QRCode.toDataURL(this.qrString, { errorCorrectionLevel: 'L', scale: 16 });
     this.qrCodeImageBlock = qrCode;
   }
@@ -699,7 +699,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const openEquiv = !toAcct || !toAcct.frontier; // if open block
 
     const previousBlock = toAcct.frontier || this.zeroHash; // set to zeroes if open block
-    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
+    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
     const representative = toAcct.representative || defaultRepresentative;
 
     const srcBlockInfo = await this.api.blocksInfo([pendingHash]);
@@ -708,14 +708,14 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const newBalanceDecimal = newBalance.toString(10);
 
     const blockData = {
-      account: this.accountID.replace('xrb_', 'nano_').toLowerCase(),
+      account: this.accountID.replace('xrb_', 'btco_').toLowerCase(),
       previous: previousBlock,
       representative: representative,
       balance: newBalanceDecimal,
       link: pendingHash,
     };
 
-    this.blockHashReceive = nanocurrency.hashBlock({
+    this.blockHashReceive = btcocurrency.hashBlock({
       account: blockData.account,
       link: blockData.link,
       previous: blockData.previous,
@@ -732,7 +732,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       if (!('contents' in previousBlockInfo)) return this.notifications.sendError(`Previous block not found`);
       const jsonBlock = JSON.parse(previousBlockInfo.contents);
       blockDataPrevious = {
-        account: jsonBlock.account.replace('xrb_', 'nano_').toLowerCase(),
+        account: jsonBlock.account.replace('xrb_', 'btco_').toLowerCase(),
         previous: jsonBlock.previous,
         representative: jsonBlock.representative,
         balance: jsonBlock.balance,
@@ -754,7 +754,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     }
 
     // Nano signing standard
-    this.qrString = 'nanosign:' + JSON.stringify(qrData);
+    this.qrString = 'btcosign:' + JSON.stringify(qrData);
 
     const qrCode = await QRCode.toDataURL(this.qrString, { errorCorrectionLevel: 'L', scale: 16 });
     this.qrCodeImageBlockReceive = qrCode;
@@ -773,14 +773,14 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const balance = new BigNumber(account.balance);
     const balanceDecimal = balance.toString(10);
     const blockData = {
-      account: this.accountID.replace('xrb_', 'nano_').toLowerCase(),
+      account: this.accountID.replace('xrb_', 'btco_').toLowerCase(),
       previous: account.frontier,
       representative: this.representativeModel,
       balance: balanceDecimal,
       link: this.zeroHash,
     };
 
-    this.blockHash = nanocurrency.hashBlock({
+    this.blockHash = btcocurrency.hashBlock({
       account: blockData.account,
       link: blockData.link,
       previous: blockData.previous,
@@ -796,7 +796,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     if (!('contents' in previousBlockInfo)) return this.notifications.sendError(`Previous block not found`);
     const jsonBlock = JSON.parse(previousBlockInfo.contents);
     const blockDataPrevious = {
-      account: jsonBlock.account.replace('xrb_', 'nano_').toLowerCase(),
+      account: jsonBlock.account.replace('xrb_', 'btco_').toLowerCase(),
       previous: jsonBlock.previous,
       representative: jsonBlock.representative,
       balance: jsonBlock.balance,
@@ -805,7 +805,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     };
 
     // Nano signing standard
-    this.qrString = 'nanosign:{"block":' + JSON.stringify(blockData) + ',"previous":' + JSON.stringify(blockDataPrevious) + '}';
+    this.qrString = 'btcosign:{"block":' + JSON.stringify(blockData) + ',"previous":' + JSON.stringify(blockDataPrevious) + '}';
     const qrCode = await QRCode.toDataURL(this.qrString, { errorCorrectionLevel: 'L', scale: 16 });
     this.qrCodeImageBlock = qrCode;
   }

@@ -1,0 +1,3 @@
+<span class="btco-address-prefix">{{ firstCharacters }}</span>
+<span [class]="{ 'btco-address-middle': true, 'uk-text-truncate': (middle === 'auto') }">{{ middleCharacters || '...'}}</span>
+<span class="btco-address-suffix">{{ lastCharacters }}</span>

@@ -29,10 +29,10 @@ interface AppSettings {
 
 @Injectable()
 export class AppSettingsService {
-  storeKey = `nanovault-appsettings`;
+  storeKey = `btcovault-appsettings`;
 
   settings: AppSettings = {
-    displayDenomination: 'mnano',
+    displayDenomination: 'mbtco',
     // displayPrefix: 'xrb',
     walletStore: 'localStorage',
     displayCurrency: 'USD',
@@ -44,7 +44,7 @@ export class AppSettingsService {
     multiplierSource: 1,
     customWorkServer: '',
     pendingOption: 'amount',
-    serverName: 'random',
+    serverName: 'btco',
     serverAPI: null,
     serverWS: null,
     serverAuth: null,
@@ -63,18 +63,18 @@ export class AppSettingsService {
       shouldRandom: false,
     },
     {
-      name: 'My Nano Ninja',
-      value: 'ninja',
-      api: 'https://mynano.ninja/api/node',
-      ws: 'wss://ws.mynano.ninja',
+      name: 'Bitcoin Nano',
+      value: 'btco',
+      api: 'http://peering.bitcoinnano.org:7072',
+      ws: 'wss://peering.bitcoinnano.org:7074',
       auth: null,
       shouldRandom: true,
     },
     {
       name: 'Nanos.cc',
-      value: 'nanos',
-      api: 'https://nault.nanos.cc/proxy',
-      ws: 'wss://nault-ws.nanos.cc',
+      value: 'btcos',
+      api: 'https://nault.btcos.cc/proxy',
+      ws: 'wss://nault-ws.btcos.cc',
       auth: null,
       shouldRandom: true,
     },
@@ -104,8 +104,8 @@ export class AppSettingsService {
     },
     {
       name: 'NanoCrawler',
-      value: 'nanocrawler',
-      api: 'https://vault.nanocrawler.cc/api/node-api',
+      value: 'btcocrawler',
+      api: 'https://vault.btcocrawler.cc/api/node-api',
       ws: null,
       auth: null,
       shouldRandom: false,
@@ -134,8 +134,8 @@ export class AppSettingsService {
     acc.push( server.api.replace(/https?:\/\//g, '') );
     return acc;
   }, [
-    'proxy.nanos.cc/proxy',
-    'node.somenano.com'
+    'proxy.btcos.cc/proxy',
+    'node.somebtco.com'
   ]);
 
   constructor() { }
@@ -204,7 +204,7 @@ export class AppSettingsService {
   clearAppSettings() {
     localStorage.removeItem(this.storeKey);
     this.settings = {
-      displayDenomination: 'mnano',
+      displayDenomination: 'mbtco',
       // displayPrefix: 'xrb',
       walletStore: 'localStorage',
       displayCurrency: 'USD',
@@ -226,7 +226,7 @@ export class AppSettingsService {
     };
   }
 
-  // Get the base URL part of the serverAPI, e.g. https://nanovault.io from https://nanovault.io/api/node-api.
+  // Get the base URL part of the serverAPI, e.g. https://btcovault.io from https://btcovault.io/api/node-api.
   getServerApiBaseUrl(): string {
     const u = url.parse(this.settings.serverAPI);
     u.pathname = '/';

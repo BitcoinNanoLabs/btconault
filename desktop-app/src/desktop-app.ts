@@ -13,7 +13,7 @@ const log = require('electron-log');
 let showUpdateErrors = false;
 let saveTimeout = null;
 let isDownloading = false;
-const nano_schemes = ['nano', 'nanorep', 'nanoseed', 'nanokey', 'nanosign', 'nanoprocess'];
+const schemes = ['btco', 'btcorep', 'btcoseed', 'btcokey', 'btcosign', 'btcoprocess'];
 
 /**
  * By default, the logger writes logs to the following locations:
@@ -155,12 +155,12 @@ class AppUpdater {
 }
 new AppUpdater();
 
-// Register handler for nano: links
+// Register handler for btco: links
 if (process.platform === 'darwin') {
-  nano_schemes.forEach((scheme) => app.setAsDefaultProtocolClient(scheme));
+  schemes.forEach((scheme) => app.setAsDefaultProtocolClient(scheme));
 } else {
   const args = process.argv[1] ? [path.resolve(process.argv[1])] : [];
-  nano_schemes.forEach((scheme) => app.setAsDefaultProtocolClient(scheme, process.execPath, args));
+  schemes.forEach((scheme) => app.setAsDefaultProtocolClient(scheme, process.execPath, args));
 }
 
 // Initialize Ledger device detection
@@ -253,7 +253,7 @@ if (!appLock) {
   app.on('second-instance', (event, argv, workingDirectory) => {
     if (mainWindow) {
 
-      // Detect on windows when the application has been loaded using a nano: link, send it to the wallet to load
+      // Detect on windows when the application has been loaded using a btco: link, send it to the wallet to load
       if (process.platform === 'win32') {
         const deeplink = findDeeplink(argv);
         if (deeplink) handleDeeplink(deeplink);
@@ -266,7 +266,7 @@ if (!appLock) {
     }
   });
 
-  // Detect on macos when the application has been loaded using a nano: link, send it to the wallet to load
+  // Detect on macos when the application has been loaded using a btco: link, send it to the wallet to load
   app.on('will-finish-launching', () => {
     app.on('open-url', (event, eventpath) => {
       if (!mainWindow) {
@@ -345,12 +345,12 @@ function getApplicationMenu() {
           click () { loadExternal('https://docs.nault.cc/'); }
         },
         {
-          label: 'Reddit (r/nanocurrency)',
-          click () { loadExternal('https://www.reddit.com/r/nanocurrency'); }
+          label: 'Reddit (r/btcocurrency)',
+          click () { loadExternal('https://www.reddit.com/r/btcocurrency'); }
         },
         {
           label: 'Discord (#nault)',
-          click () { loadExternal('https://discord.nanocenter.org/'); }
+          click () { loadExternal('https://discord.btcocenter.org/'); }
         },
         {type: 'separator'},
         {
@@ -441,6 +441,6 @@ function handleDeeplink(deeplink: string) {
 }
 
 function findDeeplink(argv: string[]) {
-  const nano_scheme = new RegExp(`^(${nano_schemes.join('|')}):.+$`, 'g');
-  return argv.find((s) => nano_scheme.test(s));
+  const scheme = new RegExp(`^(${schemes.join('|')}):.+$`, 'g');
+  return argv.find((s) => scheme.test(s));
 }

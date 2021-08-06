@@ -17,17 +17,17 @@ export class DeeplinkService {
   ) { }
 
   navigate(deeplink: string): boolean {
-    const nano_scheme = /^(nano|nanorep|nanoseed|nanokey|nanosign|nanoprocess|https):.+$/g;
+    const btco_scheme = /^(btco|btcorep|btcoseed|btcokey|btcosign|btcoprocess|https):.+$/g;
 
     if (this.util.account.isValidAccount(deeplink)) {
       // Got address, routing to send...
       this.router.navigate(['send'], {queryParams: {to: deeplink}});
 
-    } else if (this.util.nano.isValidSeed(deeplink)) {
+    } else if (this.util.btco.isValidSeed(deeplink)) {
       // Seed
       this.handleSeed(deeplink);
 
-    } else if (nano_scheme.test(deeplink)) {
+    } else if (btco_scheme.test(deeplink)) {
       // This is a valid Nano scheme URI
       const url = new URL(deeplink);
 
@@ -40,15 +40,15 @@ export class DeeplinkService {
           // address book import
           this.router.navigate(['import-address-book'], { queryParams: {hostname: url.hostname}, fragment: url.hash.slice(1)});
         }
-      } else if (url.protocol === 'nano:' && this.util.account.isValidAccount(url.pathname)) {
+      } else if (url.protocol === 'btco:' && this.util.account.isValidAccount(url.pathname)) {
         // Got address, routing to send...
         const amount = url.searchParams.get('amount');
         this.router.navigate(['send'], { queryParams: {
           to: url.pathname,
-          amount: amount ? this.util.nano.rawToMnano(amount) : null
+          amount: amount ? this.util.btco.rawToMBtco(amount) : null
         }});
 
-      } else if (url.protocol === 'nanorep:' && this.util.account.isValidAccount(url.pathname)) {
+      } else if (url.protocol === 'btcorep:' && this.util.account.isValidAccount(url.pathname)) {
         // Representative change
         this.router.navigate(['representatives'], { queryParams: {
           hideOverview: true,
@@ -56,16 +56,16 @@ export class DeeplinkService {
           representative: url.pathname
         }});
 
-      } else if (url.protocol === 'nanoseed:' && this.util.nano.isValidSeed(url.pathname)) {
+      } else if (url.protocol === 'btcoseed:' && this.util.btco.isValidSeed(url.pathname)) {
         // Seed
         this.handleSeed(url.pathname);
-      } else if (url.protocol === 'nanokey:' && this.util.nano.isValidHash(url.pathname)) {
+      } else if (url.protocol === 'btcokey:' && this.util.btco.isValidHash(url.pathname)) {
         // Private key
         this.handlePrivateKey(url.pathname);
-      } else if (url.protocol === 'nanosign:') {
+      } else if (url.protocol === 'btcosign:') {
           this.remoteSignService.navigateSignBlock(url);
 
-      } else if (url.protocol === 'nanoprocess:') {
+      } else if (url.protocol === 'btcoprocess:') {
           this.remoteSignService.navigateProcessBlock(url);
       }
 

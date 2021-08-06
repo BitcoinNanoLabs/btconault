@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import {UtilService} from '../../services/util.service';
 import {AppSettingsService} from '../../services/app-settings.service';
-import * as nanocurrency from 'nanocurrency';
+import * as btcocurrency from 'btcocurrency';
 import {PriceService} from '../../services/price.service';
 import { BigNumber } from 'bignumber.js';
 import {NotificationService} from '../../services/notification.service';
@@ -12,9 +12,9 @@ import {NotificationService} from '../../services/notification.service';
   styleUrls: ['./converter.component.less']
 })
 export class ConverterComponent implements OnInit, OnDestroy {
-  Mnano = '1';
+  MBtco = '1';
   raw = '';
-  invalidMnano = false;
+  invalidMBtco = false;
   invalidRaw = false;
   invalidFiat = false;
   fiatPrice = '0';
@@ -29,13 +29,13 @@ export class ConverterComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     BigNumber.config({ DECIMAL_PLACES: 30 });
-    this.Mnano = '1';
+    this.MBtco = '1';
 
     this.priceSub = this.price.lastPrice$.subscribe(event => {
-      this.fiatPrice = (new BigNumber(this.Mnano)).times(this.price.price.lastPrice).toString();
+      this.fiatPrice = (new BigNumber(this.MBtco)).times(this.price.price.lastPrice).toString();
     });
 
-    this.unitChange('mnano');
+    this.unitChange('mbtco');
   }
 
   ngOnDestroy() {
@@ -46,41 +46,41 @@ export class ConverterComponent implements OnInit, OnDestroy {
 
   unitChange(unit) {
     switch (unit) {
-      case 'mnano':
-        if (this.util.account.isValidNanoAmount(this.Mnano)) {
-          this.raw = nanocurrency.convert(this.Mnano, {from: nanocurrency.Unit.NANO, to: nanocurrency.Unit.raw});
-          this.fiatPrice = (new BigNumber(this.Mnano)).times(this.price.price.lastPrice).toString(10);
-          this.invalidMnano = false;
+      case 'mbtco':
+        if (this.util.account.isValidNanoAmount(this.MBtco)) {
+          this.raw = btcocurrency.convert(this.MBtco, {from: btcocurrency.Unit.BTCO, to: btcocurrency.Unit.raw});
+          this.fiatPrice = (new BigNumber(this.MBtco)).times(this.price.price.lastPrice).toString(10);
+          this.invalidMBtco = false;
           this.invalidRaw = false;
           this.invalidFiat = false;
         } else {
           this.raw = '';
           this.fiatPrice = '';
-          this.invalidMnano = true;
+          this.invalidMBtco = true;
         }
         break;
       case 'raw':
         if (this.util.account.isValidAmount(this.raw)) {
-          this.Mnano = nanocurrency.convert(this.raw, {from: nanocurrency.Unit.raw, to: nanocurrency.Unit.NANO});
-          this.fiatPrice = (new BigNumber(this.Mnano)).times(this.price.price.lastPrice).toString(10);
+          this.MBtco = btcocurrency.convert(this.raw, {from: btcocurrency.Unit.raw, to: btcocurrency.Unit.BTCO});
+          this.fiatPrice = (new BigNumber(this.MBtco)).times(this.price.price.lastPrice).toString(10);
           this.invalidRaw = false;
-          this.invalidMnano = false;
+          this.invalidMBtco = false;
           this.invalidFiat = false;
         } else {
-          this.Mnano = '';
+          this.MBtco = '';
           this.fiatPrice = '';
           this.invalidRaw = true;
         }
         break;
       case 'fiat':
         if (this.util.string.isNumeric(this.fiatPrice)) {
-          this.Mnano = (new BigNumber(this.fiatPrice)).dividedBy(this.price.price.lastPrice).toString(10);
-          this.raw = nanocurrency.convert(this.Mnano, {from: nanocurrency.Unit.NANO, to: nanocurrency.Unit.raw});
+          this.MBtco = (new BigNumber(this.fiatPrice)).dividedBy(this.price.price.lastPrice).toString(10);
+          this.raw = btcocurrency.convert(this.MBtco, {from: btcocurrency.Unit.BTCO, to: btcocurrency.Unit.raw});
           this.invalidRaw = false;
-          this.invalidMnano = false;
+          this.invalidMBtco = false;
           this.invalidFiat = false;
         } else {
-          this.Mnano = '';
+          this.MBtco = '';
           this.raw = '';
           this.invalidFiat = true;
         }

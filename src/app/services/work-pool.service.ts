@@ -5,7 +5,7 @@ import {UtilService} from './util.service';
 
 @Injectable()
 export class WorkPoolService {
-  storeKey = `nanovault-workcache`;
+  storeKey = `btcovault-workcache`;
 
   cacheLength = 25;
   workCache = [];
@@ -63,7 +63,7 @@ export class WorkPoolService {
 
     try {
       if (cached && cached.work &&
-          this.util.nano.validateWork(hash, this.util.nano.difficultyFromMultiplier(multiplier, baseThreshold), cached.work)) {
+          this.util.btco.validateWork(hash, this.util.btco.difficultyFromMultiplier(multiplier, baseThreshold), cached.work)) {
         console.log('Using cached work: ' + cached.work);
         return cached.work;
       }

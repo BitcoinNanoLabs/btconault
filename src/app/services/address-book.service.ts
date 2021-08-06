@@ -10,7 +10,7 @@ interface AddressBookEntry {
 
 @Injectable()
 export class AddressBookService {
-  storeKey = `nanovault-addressbook`;
+  storeKey = `btcovault-addressbook`;
 
   addressBook: AddressBookEntry[] = [];
 
@@ -38,7 +38,7 @@ export class AddressBookService {
 
     const newAddressBook = addressBook.map(entry => {
       if (entry.account.indexOf('xrb_') !== -1) {
-        entry.account = entry.account.replace('xrb_', 'nano_');
+        entry.account = entry.account.replace('xrb_', 'btco_');
       }
       return entry;
     });

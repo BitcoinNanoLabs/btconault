@@ -12,7 +12,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list dt,
-.uk-table th, .uk-form-label, .uk-form-icon, .nav-nano-card, .nav-representative-info,
+.uk-table th, .uk-form-label, .uk-form-icon, .nav-btco-card, .nav-representative-info,
 .accounts-dropdown, .nav-container .nav-action-receive, .left-nav > li, .mobile-top-bar,
 .uk-modal-dialog p {
 	font-family: @global-secondary-font-family;
@@ -311,11 +311,11 @@ input[type=number] {
 	}
 }
 
-.nano-address-monospace {
+.btco-address-monospace {
 	font-family: 'Roboto Mono', monospace;
 }
 
-.nano-address-clickable {
+.btco-address-clickable {
 	display: inline-block;
 	border-bottom: 2px solid transparent;
 	transition: border-color 100ms ease-in-out;
@@ -327,20 +327,20 @@ input[type=number] {
 	}
 
 	&:hover {
-		.nano-address-clickable-hover-styles();
+		.btco-address-clickable-hover-styles();
 	}
 }
 
-.nano-address-actions {
+.btco-address-actions {
 	margin-bottom: 3px !important;
 	padding-left: 10px;
 }
 
-.nano-address-clickable-hover-styles() {
+.btco-address-clickable-hover-styles() {
 	border-color: @global-primary-background;
 }
 
-.nano-address-breakable {
+.btco-address-breakable {
 	line-break: anywhere;
 }
 
@@ -371,8 +371,8 @@ input[type=number] {
 		.account-label-hover-styles();
 	}
 
-	.nano-address-clickable {
-		.nano-address-clickable-hover-styles();
+	.btco-address-clickable {
+		.btco-address-clickable-hover-styles();
 	}
 }
 
@@ -388,13 +388,13 @@ input[type=number] {
 	border: 4px solid rgba(83, 83, 83, 0.05);
 }
 
-.nano-address-prefix {
+.btco-address-prefix {
 	color: #4A90E2;
 }
-.nano-address-middle {
+.btco-address-middle {
 	min-width: 1.4em;
 }
-.nano-address-suffix {
+.btco-address-suffix {
 	color: #D5AF4E;
 }
 
@@ -437,7 +437,7 @@ input[type=number] {
 			vertical-align: -14px;
 		}
 
-		.nano-address-clickable {
+		.btco-address-clickable {
 			flex-shrink: 0;
 		}
 
@@ -509,7 +509,7 @@ input[type=number] {
 		min-width: 155px;
 		width: 45%;
 
-		.nano-address-actions {
+		.btco-address-actions {
 			margin-bottom: 22px !important;
 		}
 	}
@@ -537,15 +537,15 @@ input[type=number] {
 				font-size: 0.8rem;
 			}
 
-			.nano-address-clickable > .uk-flex {
+			.btco-address-clickable > .uk-flex {
 				flex-wrap: wrap;
 				width: 125px;
 
-				.nano-address-middle {
+				.btco-address-middle {
 					width: 0;
 				}
 
-				.nano-address-suffix {
+				.btco-address-suffix {
 					margin-left: 69px; // Nice
 				}
 			}
@@ -576,7 +576,7 @@ input[type=number] {
 			width: 45%;
 			min-width: 210px;
 
-			.nano-address-actions {
+			.btco-address-actions {
 				margin-bottom: 11px !important;
 			}
 		}
@@ -598,7 +598,7 @@ input[type=number] {
 			width: 55%;
 			min-width: 210px;
 
-			.nano-address-actions {
+			.btco-address-actions {
 				margin-bottom: 11px !important;
 			}
 		}

@@ -150,9 +150,9 @@ export class PowService {
         const activeDifficulty = await this.api.activeDifficulty();
         if (activeDifficulty?.network_current?.length === 16 && activeDifficulty?.network_receive_current?.length === 16) {
           if (queueItem.multiplier === 1 / 64) { // receive pow
-            localMultiplier = this.util.nano.multiplierFromDifficulty(activeDifficulty.network_receive_current, baseThreshold);
+            localMultiplier = this.util.btco.multiplierFromDifficulty(activeDifficulty.network_receive_current, baseThreshold);
           } else { // send pow
-            localMultiplier = this.util.nano.multiplierFromDifficulty(activeDifficulty.network_current, baseThreshold);
+            localMultiplier = this.util.btco.multiplierFromDifficulty(activeDifficulty.network_current, baseThreshold);
           }
           // clamp to max and min
           if (localMultiplier > 8) {
@@ -235,7 +235,7 @@ export class PowService {
    * Actual PoW functions
    */
   async getHashServer(hash, multiplier, workServer = '') {
-    const newThreshold = this.util.nano.difficultyFromMultiplier(multiplier, baseThreshold);
+    const newThreshold = this.util.btco.difficultyFromMultiplier(multiplier, baseThreshold);
     const serverString = workServer === '' ? 'external' : 'custom';
     console.log('Generating work with multiplier ' + multiplier + ' at threshold ' +
       newThreshold + ' using ' + serverString + ' server for hash: ', hash);
@@ -284,7 +284,7 @@ export class PowService {
     */
 
     // calculate threshold from multiplier
-    const newThreshold = this.util.nano.difficultyFromMultiplier(multiplier, baseThreshold);
+    const newThreshold = this.util.btco.difficultyFromMultiplier(multiplier, baseThreshold);
     const work = () => new Promise<void>((resolve, reject) => {
       this.cpuWorkerResolve = resolve;
       this.cpuWorkerReject = reject;
@@ -322,7 +322,7 @@ export class PowService {
    */
   getHashWebGL(hash, multiplier) {
     this.checkPowProcessLength(); // start alert timer
-    const newThreshold = this.util.nano.difficultyFromMultiplier(multiplier, baseThreshold);
+    const newThreshold = this.util.btco.difficultyFromMultiplier(multiplier, baseThreshold);
     console.log('Generating work with multiplier ' + multiplier + ' at threshold ' + newThreshold + ' using WebGL for hash: ', hash);
 
     const response = this.getDeferredPromise();

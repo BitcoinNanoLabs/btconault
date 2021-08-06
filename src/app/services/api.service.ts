@@ -7,7 +7,7 @@ import { TxType } from './util.service';
 
 @Injectable()
 export class ApiService {
-  storeKey = `nanovault-active-difficulty`;
+  storeKey = `btcovault-active-difficulty`;
   difficultyCacheDuration = 60; // time to keep active_difficulty in cache [sec]
   constructor(private http: HttpClient, private node: NodeService, private appSettings: AppSettingsService) { }
 

@@ -51,11 +51,11 @@
                 <div class="uk-width-expand uk-text-truncate uk-visible-toggle">
                   <div uk-grid>
                     <div class="uk-width-expand uk-text-truncate">
-                      <a [routerLink]="'/account/' + representative.id" class="nano-address-clickable nano-address-monospace uk-display-block" title="View Account Details" uk-tooltip>
-                        <app-nano-account-id [accountID]="representative.id"></app-nano-account-id>
+                      <a [routerLink]="'/account/' + representative.id" class="btco-address-clickable btco-address-monospace uk-display-block" title="View Account Details" uk-tooltip>
+                        <app-btco-account-id [accountID]="representative.id"></app-btco-account-id>
                       </a>
                     </div>
-                    <ul class="nano-address-actions uk-iconnav">
+                    <ul class="btco-address-actions uk-iconnav">
                       <li><a ngxClipboard [cbContent]="representative.id" (cbOnSuccess)="copied()" uk-icon="icon: copy" title="Copy Account Address" uk-tooltip></a></li>
                     </ul>
                   </div>
@@ -87,7 +87,7 @@
               <div class="uk-margin">
                 <label class="uk-form-label" for="new-address-account">Account ID</label>
                 <div class="uk-form-controls">
-                  <input type="text" class="uk-input" id="new-address-account" [(ngModel)]="newRepAccount" [disabled]="!creatingNewEntry" placeholder="nano_abc123">
+                  <input type="text" class="uk-input" id="new-address-account" [(ngModel)]="newRepAccount" [disabled]="!creatingNewEntry" placeholder="btco_abc123">
                 </div>
               </div>
 

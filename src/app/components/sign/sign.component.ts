@@ -8,11 +8,11 @@ import {UtilService, StateBlock, TxType} from '../../services/util.service';
 import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {ActivatedRoute} from '@angular/router';
-import {NanoBlockService} from '../../services/nano-block.service';
+import {NanoBlockService} from '../../services/btco-block.service';
 import {ApiService} from '../../services/api.service';
 import * as QRCode from 'qrcode';
 import * as bip39 from 'bip39';
-import * as bip39Wallet from 'nanocurrency-web';
+import * as bip39Wallet from 'btcocurrency-web';
 import { QrModalService } from '../../services/qr-modal.service';
 
 const INDEX_MAX = 4294967295;
@@ -81,7 +81,7 @@ export class SignComponent implements OnInit {
     private walletService: WalletService,
     private addressBookService: AddressBookService,
     private notificationService: NotificationService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: NanoBlockService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
     private api: ApiService,
@@ -156,7 +156,7 @@ export class SignComponent implements OnInit {
           return this.notificationService.sendError(`Meaningless block. The balance and representative are unchanged!`, {length: 0});
         }
 
-        this.amount = this.util.nano.rawToMnano(this.rawAmount).toString(10);
+        this.amount = this.util.btco.rawToMBtco(this.rawAmount).toString(10);
         this.prepareTransaction();
       } else if (!this.previousBlock && this.verifyBlock(this.currentBlock)) {
         // No previous block present (open block)
@@ -184,7 +184,7 @@ export class SignComponent implements OnInit {
           return this.notificationService.sendError(`Only OPEN block is currently supported when previous block is missing`, {length: 0});
         }
 
-        this.amount = this.util.nano.rawToMnano(this.rawAmount).toString(10);
+        this.amount = this.util.btco.rawToMBtco(this.rawAmount).toString(10);
         this.prepareTransaction();
       } else {
         return;
@@ -201,8 +201,8 @@ export class SignComponent implements OnInit {
     if (this.util.account.isValidAccount(block.account) &&
       this.util.account.isValidAccount(block.representative) &&
       this.util.account.isValidAmount(block.balance) &&
-      this.util.nano.isValidHash(block.previous) &&
-      this.util.nano.isValidHash(block.link)) {
+      this.util.btco.isValidHash(block.previous) &&
+      this.util.btco.isValidHash(block.link)) {
       return true;
     } else {
       this.notificationService.sendError(`The provided blocks contain invalid values!`, {length: 0});
@@ -213,7 +213,7 @@ export class SignComponent implements OnInit {
   verifyBlockHash(currentBlock: StateBlock, previousBlock: StateBlock) {
     const block: StateBlock = {account: previousBlock.account, link: previousBlock.link, previous: previousBlock.previous,
       representative: previousBlock.representative, balance: previousBlock.balance, signature: null, work: null};
-    const previousHash = this.util.hex.fromUint8(this.util.nano.hashStateBlock(block));
+    const previousHash = this.util.hex.fromUint8(this.util.btco.hashStateBlock(block));
     if (!currentBlock.previous || previousHash !== currentBlock.previous) {
       this.notificationService.sendError(`The hash of the previous block does not match the frontier in the new block!`, {length: 0});
     }
@@ -239,7 +239,7 @@ export class SignComponent implements OnInit {
     switch (this.signTypeSelected) {
       // wallet
       case this.signTypes[0]:
-        this.walletAccount = this.accounts.find(a => a.id.replace('xrb_', 'nano_') === this.signatureAccount);
+        this.walletAccount = this.accounts.find(a => a.id.replace('xrb_', 'btco_') === this.signatureAccount);
         if (!this.walletAccount) {
           return this.signatureMessage = 'Could not find a matching wallet account to sign with. Make sure it\'s added under your accounts';
         } else {
@@ -293,9 +293,9 @@ export class SignComponent implements OnInit {
     }
 
     if (this.txType === TxType.send || this.txType === TxType.change) {
-      this.signatureAccount = this.fromAccountID.replace('xrb_', 'nano_').toLowerCase();
+      this.signatureAccount = this.fromAccountID.replace('xrb_', 'btco_').toLowerCase();
     } else if (this.txType === TxType.receive || this.txType === TxType.open) {
-      this.signatureAccount = this.toAccountID.replace('xrb_', 'nano_').toLowerCase();
+      this.signatureAccount = this.toAccountID.replace('xrb_', 'btco_').toLowerCase();
     }
 
     if (this.shouldSign) {
@@ -331,7 +331,7 @@ export class SignComponent implements OnInit {
     this.confirmingTransaction = true;
 
     // sign the block
-    const block = await this.nanoBlock.signOfflineBlock(walletAccount, this.currentBlock,
+    const block = await this.btcoBlock.signOfflineBlock(walletAccount, this.currentBlock,
       this.previousBlock, this.txType, this.shouldGenWork, this.selectedThreshold, isLedger);
     console.log('Signature: ' + block.signature || 'Error');
     console.log('Work: ' + block.work || 'Not applied');
@@ -357,10 +357,10 @@ export class SignComponent implements OnInit {
         this.clean(this.previousBlock);
       }
       if (this.previousBlock) {
-        this.qrString = 'nanoprocess:{"block":' + JSON.stringify(block) +
+        this.qrString = 'btcoprocess:{"block":' + JSON.stringify(block) +
         ',"previous":' + JSON.stringify(this.previousBlock) + '}';
       } else {
-        this.qrString = 'nanoprocess:{"block":' + JSON.stringify(block) + '}';
+        this.qrString = 'btcoprocess:{"block":' + JSON.stringify(block) + '}';
       }
 
       const qrCode = await QRCode.toDataURL(this.qrString, { errorCorrectionLevel: 'L', scale: 16 });
@@ -486,7 +486,7 @@ export class SignComponent implements OnInit {
     this.validIndex = true;
     if (this.util.string.isNumeric(index) && index % 1 === 0) {
       index = parseInt(index, 10);
-      if (!this.util.nano.isValidIndex(index)) {
+      if (!this.util.btco.isValidIndex(index)) {
         this.validIndex = false;
       }
       if (index > INDEX_MAX) {
@@ -513,7 +513,7 @@ export class SignComponent implements OnInit {
     // input is mnemonic
     if (keyType === 'mnemonic') {
       seed = bip39.mnemonicToEntropy(input).toUpperCase();
-      // seed must be 64 or the nano wallet can't be created.
+      // seed must be 64 or the btco wallet can't be created.
       // This is the reason 12-words can't be used because the seed would be 32 in length
       if (seed.length !== 64) {
         this.notificationService.sendError(`Mnemonic not 24 words`);
@@ -521,8 +521,8 @@ export class SignComponent implements OnInit {
       }
     }
 
-    // nano seed
-    if (keyType === 'nano_seed' || seed !== '' || keyType === 'bip39_seed') {
+    // btco seed
+    if (keyType === 'btco_seed' || seed !== '' || keyType === 'bip39_seed') {
       if (seed === '') { // seed from input, no mnemonic
         seed = input;
       }
@@ -532,7 +532,7 @@ export class SignComponent implements OnInit {
       }
       // also check using bip39/44 derivation
       let bip39Seed;
-      // take 128 char bip39 seed directly from input or convert it from a 64 char nano seed (entropy)
+      // take 128 char bip39 seed directly from input or convert it from a 64 char btco seed (entropy)
       if (keyType === 'bip39_seed') {
         bip39Seed = input;
       } else {
@@ -563,10 +563,10 @@ export class SignComponent implements OnInit {
 
   // Validate type of master key
   checkMasterKey(key) {
-    // validate nano seed
+    // validate btco seed
     if (key.length === 64) {
-      if (this.util.nano.isValidSeed(key)) {
-        return 'nano_seed';
+      if (this.util.btco.isValidSeed(key)) {
+        return 'btco_seed';
       }
     }
     // validate bip39 seed

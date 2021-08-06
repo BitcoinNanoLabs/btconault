@@ -7,7 +7,7 @@ import {ApiService} from '../../services/api.service';
 import {UtilService} from '../../services/util.service';
 import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
-import {NanoBlockService} from '../../services/nano-block.service';
+import {NanoBlockService} from '../../services/btco-block.service';
 import {PriceService} from '../../services/price.service';
 import {WebsocketService} from '../../services/websocket.service';
 import * as QRCode from 'qrcode';
@@ -22,7 +22,7 @@ import BigNumber from 'bignumber.js';
 
 
 export class ReceiveComponent implements OnInit {
-  nano = 1000000000000000000000000;
+  btco = 1000000000000000000000000;
   accounts = this.walletService.wallet.accounts;
 
   pendingAccountModel = '0';
@@ -48,7 +48,7 @@ export class ReceiveComponent implements OnInit {
     private api: ApiService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: NanoBlockService,
     public price: PriceService,
     private websocket: WebsocketService,
     private util: UtilService) { }
@@ -143,19 +143,19 @@ export class ReceiveComponent implements OnInit {
     this.loadingIncomingTxList = false;
   }
 
-  async nanoAmountChange() {
+  async btcoAmountChange() {
     if (!this.validateNanoAmount() || Number(this.amountNano) === 0) {
       this.amountFiat = '';
       this.changeQRAmount();
       return;
     }
-    const rawAmount = this.util.nano.mnanoToRaw(this.amountNano || 0);
+    const rawAmount = this.util.btco.mbtcoToRaw(this.amountNano || 0);
 
     // This is getting hacky, but if their currency is bitcoin, use 6 decimals, if it is not, use 2
     const precision = this.settings.settings.displayCurrency === 'BTC' ? 1000000 : 100;
 
     // Determine fiat value of the amount
-    const fiatAmount = this.util.nano.rawToMnano(rawAmount).times(this.price.price.lastPrice)
+    const fiatAmount = this.util.btco.rawToMBtco(rawAmount).times(this.price.price.lastPrice)
       .times(precision).floor().div(precision).toNumber();
 
     this.amountFiat = fiatAmount.toString();
@@ -169,12 +169,12 @@ export class ReceiveComponent implements OnInit {
       this.changeQRAmount();
       return;
     }
-    const rawAmount = this.util.nano.mnanoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const nanoVal = this.util.nano.rawToNano(rawAmount).floor();
-    const rawRounded = this.util.nano.nanoToRaw(nanoVal);
-    const nanoAmount = this.util.nano.rawToMnano(rawRounded);
+    const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
+    const btcoVal = this.util.btco.rawToNano(rawAmount).floor();
+    const rawRounded = this.util.btco.btcoToRaw(btcoVal);
+    const btcoAmount = this.util.btco.rawToMBtco(rawRounded);
 
-    this.amountNano = nanoAmount.toFixed();
+    this.amountNano = btcoAmount.toFixed();
     this.changeQRAmount(rawRounded.toFixed());
     this.validateNanoAmount();
   }
@@ -208,7 +208,7 @@ export class ReceiveComponent implements OnInit {
     let qrCode = null;
     if (account.length > 1) {
       this.qrAccount = account;
-      qrCode = await QRCode.toDataURL(`nano:${account}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ''}`, {scale: 7});
+      qrCode = await QRCode.toDataURL(`btco:${account}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ''}`, {scale: 7});
     }
     this.qrCodeImage = qrCode;
   }
@@ -222,7 +222,7 @@ export class ReceiveComponent implements OnInit {
       }
     }
     if (this.qrAccount.length > 1) {
-      qrCode = await QRCode.toDataURL(`nano:${this.qrAccount}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ''}`, {scale: 7});
+      qrCode = await QRCode.toDataURL(`btco:${this.qrAccount}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ''}`, {scale: 7});
       this.qrCodeImage = qrCode;
     }
   }
@@ -252,7 +252,7 @@ export class ReceiveComponent implements OnInit {
     }
     pendingBlock.loading = true;
 
-    const newBlock = await this.nanoBlock.generateReceive(walletAccount, sourceBlock, this.walletService.isLedgerWallet());
+    const newBlock = await this.btcoBlock.generateReceive(walletAccount, sourceBlock, this.walletService.isLedgerWallet());
 
     if (newBlock) {
       pendingBlock.received = true;

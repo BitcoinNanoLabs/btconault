@@ -53,10 +53,10 @@
   border-color: transparent;
 }
 
-.icon-nano-logo {
+.icon-btco-logo {
   margin: 13px 11px;
   width: 32px;
   background-color: currentcolor;
-  -webkit-mask-image: url('assets/img/nano-mark-simple.svg');
-  mask-image: url('assets/img/nano-mark-simple.svg');
+  -webkit-mask-image: url('assets/img/btco-mark-simple.svg');
+  mask-image: url('assets/img/btco-mark-simple.svg');
 }

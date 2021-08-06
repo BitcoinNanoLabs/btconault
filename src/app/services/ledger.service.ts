@@ -29,7 +29,7 @@ export const LedgerStatus = {
 
 export interface LedgerData {
   status: string;
-  nano: any|null;
+  btco: any|null;
   transport: Transport|null;
 }
 
@@ -55,7 +55,7 @@ export class LedgerService {
 
   ledger: LedgerData = {
     status: LedgerStatus.NOT_CONNECTED,
-    nano: null,
+    btco: null,
     transport: null,
   };
 
@@ -90,10 +90,10 @@ export class LedgerService {
     }
   }
 
-  // Scraps binding to any existing transport/nano object
+  // Scraps binding to any existing transport/btco object
   resetLedger() {
     this.ledger.transport = null;
-    this.ledger.nano = null;
+    this.ledger.btco = null;
   }
 
   /**
@@ -272,7 +272,7 @@ export class LedgerService {
         // LedgerLogs.listen((log: LedgerLog) => console.log(`Ledger: ${log.type}: ${log.message}`));
         this.ledger.transport = trans;
         this.ledger.transport.setExchangeTimeout(this.waitTimeout); // 5 minutes
-        this.ledger.nano = new Nano(this.ledger.transport);
+        this.ledger.btco = new Nano(this.ledger.transport);
 
         resolve(this.ledger.transport);
       }).catch(reject);
@@ -329,7 +329,7 @@ export class LedgerService {
         }
       }
 
-      if (!this.ledger.transport || !this.ledger.nano) {
+      if (!this.ledger.transport || !this.ledger.btco) {
         return resolve(false);
       }
 
@@ -353,7 +353,7 @@ export class LedgerService {
 
       // Try to load the app config
       try {
-        const ledgerConfig = await this.ledger.nano.getAppConfiguration();
+        const ledgerConfig = await this.ledger.btco.getAppConfiguration();
         resolved = true;
 
         if (!ledgerConfig) return resolve(false);
@@ -424,7 +424,7 @@ export class LedgerService {
     if (this.isDesktop) {
       return await this.updateCacheDesktop(accountIndex, cacheData, blockData.contents.signature);
     } else {
-      return await this.ledger.nano.cacheBlock(this.ledgerPath(accountIndex), cacheData, blockData.contents.signature);
+      return await this.ledger.btco.cacheBlock(this.ledgerPath(accountIndex), cacheData, blockData.contents.signature);
     }
   }
 
@@ -443,7 +443,7 @@ export class LedgerService {
     if (this.isDesktop) {
       return await this.updateCacheDesktop(accountIndex, cacheData, blockData.signature);
     } else {
-      return await this.ledger.nano.cacheBlock(this.ledgerPath(accountIndex), cacheData, blockData.signature);
+      return await this.ledger.btco.cacheBlock(this.ledgerPath(accountIndex), cacheData, blockData.signature);
     }
   }
 
@@ -455,7 +455,7 @@ export class LedgerService {
       return this.signBlockDesktop(accountIndex, blockData);
     } else {
       this.ledger.transport.setExchangeTimeout(this.waitTimeout);
-      return await this.ledger.nano.signBlock(this.ledgerPath(accountIndex), blockData);
+      return await this.ledger.btco.signBlock(this.ledgerPath(accountIndex), blockData);
     }
   }
 
@@ -466,7 +466,7 @@ export class LedgerService {
   async getLedgerAccountWeb(accountIndex: number, showOnScreen = false) {
     this.ledger.transport.setExchangeTimeout(showOnScreen ? this.waitTimeout : this.normalTimeout);
     try {
-      return await this.ledger.nano.getAddress(this.ledgerPath(accountIndex), showOnScreen);
+      return await this.ledger.btco.getAddress(this.ledgerPath(accountIndex), showOnScreen);
     } catch (err) {
       throw err;
     }

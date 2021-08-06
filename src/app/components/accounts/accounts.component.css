@@ -30,11 +30,11 @@ th.hidden-column, td.hidden-column {
 	vertical-align: middle;
 }
 
-.account-container:hover .nano-address-clickable {
+.account-container:hover .btco-address-clickable {
 	border-color: transparent;
 }
 
-.account-container .nano-address-clickable {
+.account-container .btco-address-clickable {
 	vertical-align: bottom;
 }
 
