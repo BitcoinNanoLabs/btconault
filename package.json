@@ -1,9 +1,9 @@
 {
-  "name": "nault",
-  "version": "1.10.3",
+  "name": "btconault",
+  "version": "1.15.0",
   "license": "MIT",
   "description": "Wallet for interacting with Bitcoin Nano",
-  "author": "The Bitcoin Nano Community",
+  "author": "The Bitcoin Nano Community ",
   "main": "desktop-app/dist/desktop-app.js",
   "scripts": {
     "ng": "ng",
@@ -38,6 +38,7 @@
     "@angular/platform-browser": "^10.0.7",
     "@angular/platform-browser-dynamic": "^10.0.7",
     "@angular/router": "^10.0.7",
+    "@angular/service-worker": "^10.2.5",
     "@ledgerhq/hw-transport": "^5.39.0",
     "@ledgerhq/hw-transport-node-ble": "^5.39.0",
     "@ledgerhq/hw-transport-node-hid": "^5.39.0",
@@ -47,9 +48,8 @@
     "@ledgerhq/hw-transport-webusb": "^5.39.0",
     "@ledgerhq/logs": "^5.39.0",
     "@ng-bootstrap/ng-bootstrap": "^7.0.0",
+    "@ngneat/transloco": "^2.22.0",
     "@types/crypto-js": "^3.1.38",
-    "@zxing/browser": "^0.0.9",
-    "@zxing/library": "^0.18.6",
     "@zxing/ngx-scanner": "^3.0.0",
     "angular-password-strength-meter": "^3.0.0",
     "babel-polyfill": "^6.26.0",
@@ -57,17 +57,18 @@
     "bignumber.js": "^5.0.0",
     "bip39": "^3.0.2",
     "blakejs": "^1.1.0",
-    "btcocurrency": "^1.0.5",
-    "btcocurrency-web": "^1.0.5",
     "core-js": "^3.6.5",
-    "crypto": "^1.0.1",
-    "crypto-js": "^3.1.9-1",
+    "crypto-js": "~3.1.9-1",
     "electron-log": "^4.3.1",
     "electron-settings": "^4.0.2",
     "electron-updater": "^4.3.5",
+    "hermes-channel": "0.0.6",
     "hw-app-nano": "^1.3.0",
+    "nano-base32": "^1.0.1",
+    "btcocurrency": "^1.0.5",
+    "btcocurrency-web": "^1.0.5",
     "ngx-clipboard": "^12.3.0",
-    "node-hid": "^1.3.0",
+    "node-hid": "~1.3.0",
     "qrcode": "^1.4.4",
     "rxjs": "^6.5.5",
     "rxjs-compat": "^6.5.5",
@@ -106,10 +107,10 @@
     "zxcvbn3": "^0.1.1"
   },
   "build": {
-    "appId": "cc.nault",
+    "appId": "cc.btconault",
     "buildVersion": "1.0.0",
-    "productName": "Nault",
-    "copyright": "Copyright © 2020 The bitcoin Nano Community ",
+    "productName": "BtcoNault",
+    "copyright": "Copyright © 2020 The Nano Community / Andrew Steele",
     "directories": {
       "output": "desktop-app/build",
       "buildResources": "desktop-app/assets",
@@ -133,7 +134,7 @@
       "target": "AppImage",
       "icon": "desktop-app/assets/linux",
       "desktop": {
-        "GenericName": "btco Wallet"
+        "GenericName": "Bitcoin Nano Wallet"
       }
     },
     "protocols": {

@@ -13,6 +13,7 @@ import {PriceService} from '../../services/price.service';
 import {NanoBlockService} from '../../services/btco-block.service';
 import { QrModalService } from '../../services/qr-modal.service';
 import { environment } from 'environments/environment';
+import { TranslocoService } from '@ngneat/transloco';
 
 const nacl = window['nacl'];
 
@@ -40,7 +41,7 @@ export class SendComponent implements OnInit {
   selectedAmount = this.amounts[0];
 
   amount = null;
-  amountRaw = new BigNumber(0);
+  amountExtraRaw = new BigNumber(0);
   amountFiat: number|null = null;
   rawAmount: BigNumber = new BigNumber(0);
   fromAccount: any = {};
@@ -62,12 +63,13 @@ export class SendComponent implements OnInit {
     private addressBookService: AddressBookService,
     private notificationService: NotificationService,
     private nodeApi: ApiService,
-    private btcoBlock: NanoBlockService,
+    private nanoBlock: NanoBlockService,
     public price: PriceService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
     private util: UtilService,
-    private qrModalService: QrModalService, ) { }
+    private qrModalService: QrModalService,
+    private translocoService: TranslocoService) { }
 
   async ngOnInit() {
     const params = this.router.snapshot.queryParams;
@@ -111,9 +113,24 @@ export class SendComponent implements OnInit {
   }
 
   updateQueries(params) {
-    if (params && params.amount) {
-      this.amount = params.amount;
+    if ( params && params.amount && !isNaN(params.amount) ) {
+      const amountAsRaw =
+        new BigNumber(
+          this.util.btco.mbtcoToRaw(
+            new BigNumber(params.amount)
+          )
+        );
+
+      this.amountExtraRaw = amountAsRaw.mod(this.btco).floor();
+
+      this.amount =
+        this.util.btco.rawToMBtco(
+          amountAsRaw.minus(this.amountExtraRaw)
+        ).toNumber();
+
+      this.syncFiatPrice();
     }
+
     if (params && params.to) {
       this.toAccountID = params.to;
       this.validateDestination();
@@ -142,7 +159,7 @@ export class SendComponent implements OnInit {
   // An update to the Nano amount, sync the fiat value
   syncFiatPrice() {
     if (!this.validateAmount()) return;
-    const rawAmount = this.getAmountBaseValue(this.amount || 0).plus(this.amountRaw);
+    const rawAmount = this.getAmountBaseValue(this.amount || 0).plus(this.amountExtraRaw);
     if (rawAmount.lte(0)) {
       this.amountFiat = 0;
       return;
@@ -166,10 +183,10 @@ export class SendComponent implements OnInit {
     }
     if (!this.util.string.isNumeric(this.amountFiat)) return;
     const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const btcoVal = this.util.btco.rawToNano(rawAmount).floor();
-    const btcoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
+    const nanoVal = this.util.btco.rawToNano(rawAmount).floor();
+    const nanoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(nanoVal));
 
-    this.amount = btcoAmount.toNumber();
+    this.amount = nanoAmount.toNumber();
   }
 
   searchAddressBook() {
@@ -202,9 +219,13 @@ export class SendComponent implements OnInit {
     // Remove spaces from the account id
     this.toAccountID = this.toAccountID.replace(/ /g, '');
 
-    this.addressBookMatch = this.addressBookService.getAccountName(this.toAccountID);
+    this.addressBookMatch = (
+        this.addressBookService.getAccountName(this.toAccountID)
+      || this.getAccountLabel(this.toAccountID, null)
+    );
+
     if (!this.addressBookMatch && this.toAccountID === environment.donationAddress) {
-      this.addressBookMatch = 'Nault Donations';
+      this.addressBookMatch = 'BtcoNault Donations';
     }
 
     // const accountInfo = await this.walletService.walletApi.accountInfo(this.toAccountID);
@@ -222,6 +243,16 @@ export class SendComponent implements OnInit {
     } else {
       this.toAccountStatus = 0;
     }
+  }
+
+  getAccountLabel(accountID, defaultLabel) {
+    const walletAccount = this.walletService.wallet.accounts.find(a => a.id === accountID);
+
+    if (walletAccount == null) {
+      return defaultLabel;
+    }
+
+    return (this.translocoService.translate('general.account') + '#' + walletAccount.index);
   }
 
   validateAmount() {
@@ -286,9 +317,9 @@ export class SendComponent implements OnInit {
     this.toAccount = to;
 
     const rawAmount = this.getAmountBaseValue(this.amount || 0);
-    this.rawAmount = rawAmount.plus(this.amountRaw);
+    this.rawAmount = rawAmount.plus(this.amountExtraRaw);
 
-    const btcoAmount = this.rawAmount.div(this.btco);
+    const nanoAmount = this.rawAmount.div(this.btco);
 
     if (this.amount < 0 || rawAmount.lessThan(0)) {
       return this.notificationService.sendWarning(`Amount is invalid`);
@@ -298,14 +329,22 @@ export class SendComponent implements OnInit {
     }
 
     // Determine a proper raw amount to show in the UI, if a decimal was entered
-    this.amountRaw = this.rawAmount.mod(this.btco);
+    this.amountExtraRaw = this.rawAmount.mod(this.btco);
 
     // Determine fiat value of the amount
     this.amountFiat = this.util.btco.rawToMBtco(rawAmount).times(this.price.price.lastPrice).toNumber();
 
+    this.fromAddressBook = (
+        this.addressBookService.getAccountName(this.fromAccountID)
+      || this.getAccountLabel(this.fromAccountID, 'Account')
+    );
+
+    this.toAddressBook = (
+        this.addressBookService.getAccountName(destinationID)
+      || this.getAccountLabel(destinationID, null)
+    );
+
     // Start precomputing the work...
-    this.fromAddressBook = this.addressBookService.getAccountName(this.fromAccountID);
-    this.toAddressBook = this.addressBookService.getAccountName(destinationID);
     this.workPool.addWorkToCache(this.fromAccount.frontier, 1);
 
     this.activePanel = 'confirm';
@@ -325,7 +364,7 @@ export class SendComponent implements OnInit {
     try {
       const destinationID = this.getDestinationID();
 
-      const newHash = await this.btcoBlock.generateSend(walletAccount, destinationID,
+      const newHash = await this.nanoBlock.generateSend(walletAccount, destinationID,
         this.rawAmount, this.walletService.isLedgerWallet());
 
       if (newHash) {
@@ -362,16 +401,16 @@ export class SendComponent implements OnInit {
       return;
     }
 
-    this.amountRaw = walletAccount.balanceRaw;
+    this.amountExtraRaw = walletAccount.balanceRaw;
 
-    const btcoVal = this.util.btco.rawToNano(walletAccount.balance).floor();
-    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
+    const nanoVal = this.util.btco.rawToNano(walletAccount.balance).floor();
+    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(nanoVal));
     this.amount = maxAmount.toNumber();
     this.syncFiatPrice();
   }
 
   resetRaw() {
-    this.amountRaw = new BigNumber(0);
+    this.amountExtraRaw = new BigNumber(0);
   }
 
   getAmountBaseValue(value) {
@@ -405,6 +444,11 @@ export class SendComponent implements OnInit {
       }
     }, () => {}
     );
+  }
+
+  copied() {
+    this.notificationService.removeNotification('success-copied');
+    this.notificationService.sendSuccess(`Successfully copied to clipboard!`, { identifier: 'success-copied' });
   }
 
 }

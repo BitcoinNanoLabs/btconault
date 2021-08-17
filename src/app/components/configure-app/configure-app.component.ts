@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Renderer2 } from '@angular/core';
 import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {AppSettingsService} from '../../services/app-settings.service';
@@ -14,6 +14,7 @@ import {BehaviorSubject} from 'rxjs';
 import {RepresentativeService} from '../../services/representative.service';
 import {NinjaService} from '../../services/ninja.service';
 import {QrModalService} from '../../services/qr-modal.service';
+import { TranslocoService } from '@ngneat/transloco';
 
 @Component({
   selector: 'app-configure-app',
@@ -37,8 +38,13 @@ export class ConfigureAppComponent implements OnInit {
     private util: UtilService,
     private price: PriceService,
     private ninja: NinjaService,
-    private qrModalService: QrModalService) { }
+    private renderer: Renderer2,
+    private qrModalService: QrModalService,
+    private translate: TranslocoService) { }
   wallet = this.walletService.wallet;
+
+  languages = this.translate.getAvailableLangs() as [{id: string, label: string}];
+  selectedLanguage = this.languages[0].id;
 
   denominations = [
     { name: 'BTCO', value: 'mbtco' },
@@ -91,6 +97,19 @@ export class ConfigureAppComponent implements OnInit {
   ];
   selectedCurrency = this.currencies[0].value;
 
+  nightModeOptions = [
+    { name: 'Enabled', value: 'enabled' },
+    { name: 'Disabled', value: 'disabled' },
+  ];
+  selectedNightModeOption = this.nightModeOptions[0].value;
+
+  identiconOptions = [
+    { name: 'None', value: 'none' },
+    { name: 'Nanoidenticons (by keerifox)', value: 'nanoidenticons' },
+    { name: 'Natricon (by Appditto)', value: 'natricon' },
+  ];
+  selectedIdenticonOption = this.identiconOptions[0].value;
+
   inactivityOptions = [
     { name: 'Never', value: 0 },
     { name: '1 Minute', value: 1 },
@@ -113,7 +132,6 @@ export class ConfigureAppComponent implements OnInit {
 
   multiplierOptions = [
     { name: 'Default (1x or 1/64x)', value: 1 },
-    { name: 'Automatic (max 8x)', value: 0 },
     { name: '2x', value: 2 },
     { name: '4x', value: 4 },
     { name: '8x', value: 8 },
@@ -124,8 +142,8 @@ export class ConfigureAppComponent implements OnInit {
   selectedMultiplierOption: number = this.multiplierOptions[0].value;
 
   pendingOptions = [
-    { name: 'Largest Amount First', value: 'amount' },
-    { name: 'Oldest Transaction First', value: 'date' },
+    { name: 'Automatic - Largest Amount First', value: 'amount' },
+    { name: 'Automatic - Oldest Transaction First', value: 'date' },
     { name: 'Manual', value: 'manual' },
   ];
   selectedPendingOption = this.pendingOptions[0].value;
@@ -218,7 +236,7 @@ export class ConfigureAppComponent implements OnInit {
 
     try {
       const quorumData = await this.api.confirmationQuorum();
-      this.peersStakeReq = quorumData ? Number(this.util.btco.rawToMBtco(quorumData.peers_stake_required)).toLocaleString('en-US') : null;
+      this.peersStakeReq = quorumData ? Number(this.util.btco.rawToMBtco(quorumData.quorum_delta)).toLocaleString('en-US') : null;
       this.peersStakeTotal = quorumData ? Number(this.util.btco.rawToMBtco(quorumData.peers_stake_total)).toLocaleString('en-US') : null;
     } catch {console.warn('Failed to get node stats: confirmation quorum'); }
 
@@ -234,8 +252,18 @@ export class ConfigureAppComponent implements OnInit {
   loadFromSettings() {
     const settings = this.appSettings.settings;
 
+    const matchingLanguage = this.languages.find(language => language.id === settings.language);
+    this.selectedLanguage = matchingLanguage.id || this.languages[0].id;
+
     const matchingCurrency = this.currencies.find(d => d.value === settings.displayCurrency);
     this.selectedCurrency = matchingCurrency.value || this.currencies[0].value;
+
+    const nightModeOptionString = (settings.lightModeEnabled === true) ? 'disabled' : 'enabled';
+    const matchingNightModeOption = this.nightModeOptions.find(d => d.value === nightModeOptionString);
+    this.selectedNightModeOption = matchingNightModeOption.value || this.nightModeOptions[0].value;
+
+    const matchingIdenticonOptions = this.identiconOptions.find(d => d.value === settings.identiconsStyle);
+    this.selectedIdenticonOption = matchingIdenticonOptions.value || this.identiconOptions[0].value;
 
     const matchingStorage = this.storageOptions.find(d => d.value === settings.walletStore);
     this.selectedStorage = matchingStorage.value || this.storageOptions[0].value;
@@ -269,6 +297,18 @@ export class ConfigureAppComponent implements OnInit {
   }
 
   async updateDisplaySettings() {
+    if (this.selectedNightModeOption === 'disabled') {
+      this.renderer.addClass(document.body, 'light-mode');
+      this.renderer.removeClass(document.body, 'dark-mode');
+      this.appSettings.setAppSetting('lightModeEnabled', true);
+    } else {
+      this.renderer.addClass(document.body, 'dark-mode');
+      this.renderer.removeClass(document.body, 'light-mode');
+      this.appSettings.setAppSetting('lightModeEnabled', false);
+    }
+
+    this.appSettings.setAppSetting('identiconsStyle', this.selectedIdenticonOption);
+
     const newCurrency = this.selectedCurrency;
     // const updatePrefixes = this.appSettings.settings.displayPrefix !== this.selectedPrefix;
     const reloadFiat = this.appSettings.settings.displayCurrency !== newCurrency;
@@ -280,6 +320,9 @@ export class ConfigureAppComponent implements OnInit {
       this.appSettings.setAppSetting('displayCurrency', newCurrency);
       this.walletService.reloadFiatBalances();
     }
+
+    this.appSettings.setAppSetting('language', this.selectedLanguage);
+    this.translate.setActiveLang(this.selectedLanguage);
 
     // if (updatePrefixes) {
     //   this.appSettings.setAppSetting('displayPrefix', this.selectedPrefix);
@@ -299,6 +342,21 @@ export class ConfigureAppComponent implements OnInit {
 
   async updateWalletSettings() {
     const newStorage = this.selectedStorage;
+    const resaveWallet = this.appSettings.settings.walletStore !== newStorage;
+
+    // ask for user confirmation before clearing the wallet cache
+    if (resaveWallet && newStorage === this.storageOptions[1].value) {
+      const UIkit = window['UIkit'];
+      try {
+        await UIkit.modal.confirm('<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">You are about to <b>disable storage of all wallet data, which means there will be no wallet configured next time you use BtcoNault</b>.</span><br><br><b style="font-size: 18px;">Before continuing, make sure you have saved the Nano seed and/or mnemonic of your current wallet</b>.<br><br><span style="font-size: 18px;"><b>YOU WILL NOT BE ABLE TO RECOVER THE FUNDS</b><br>without a backup of your currently configured wallet.</span></p><br>');
+      } catch (err) {
+        // pressing cancel, reset storage setting and interrupt
+        this.selectedStorage = this.storageOptions[0].value;
+        this.notifications.sendInfo(`Switched back to "Browser Local Storage" for the wallet data. Use the button again if you want to save other settings.`, {length: 10000});
+        return;
+      }
+    }
+
     let newPoW = this.selectedPoWOption;
     const newMultiplier = this.selectedMultiplierOption;
     const pendingOption = this.selectedPendingOption;
@@ -306,8 +364,6 @@ export class ConfigureAppComponent implements OnInit {
     if (this.util.account.isValidNanoAmount(this.minimumReceive)) {
       minReceive = this.minimumReceive;
     }
-
-    const resaveWallet = this.appSettings.settings.walletStore !== newStorage;
 
     // reload pending if threshold changes or if receive priority changes from manual to auto
     let reloadPending = this.appSettings.settings.minimumReceive !== this.minimumReceive
@@ -415,7 +471,11 @@ export class ConfigureAppComponent implements OnInit {
     this.appSettings.setAppSettings(newSettings);
     this.appSettings.loadAppSettings();
 
-    this.notifications.sendSuccess(`Server settings successfully updated, reconnecting to backend`);
+    if (this.selectedServer !== 'offline') {
+      this.notifications.sendSuccess(`Server settings successfully updated, reconnecting to backend`);
+    } else {
+      this.notifications.sendSuccess(`Server settings successfully updated. Now in offline mode.`);
+    }
 
     this.node.node.status = false; // Directly set node to offline since API url changed.  Status will get set by reloadBalances
 
@@ -536,7 +596,7 @@ export class ConfigureAppComponent implements OnInit {
   async clearAllData() {
     const UIkit = window['UIkit'];
     try {
-      await UIkit.modal.confirm('<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">You are about to delete all data stored in Nault, <b>which includes all locally stored data about your currently configured wallet, all entries from your address and representative books, and any other cached data. All settings will be reset to default</b>.</span><br><br><b style="font-size: 18px;">Before continuing, make sure you have saved the Nano seed and/or mnemonic of your current wallet</b>.<br><br><span style="font-size: 18px;"><b>YOU WILL NOT BE ABLE TO RECOVER THE FUNDS</b><br>without a backup of your currently configured wallet.</span></p><br>');
+      await UIkit.modal.confirm('<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">You are about to delete all data stored in BtcoNault, <b>which includes all locally stored data about your currently configured wallet, all entries from your address and representative books, and any other cached data. All settings will be reset to default</b>.</span><br><br><b style="font-size: 18px;">Before continuing, make sure you have saved the Nano seed and/or mnemonic of your current wallet</b>.<br><br><span style="font-size: 18px;"><b>YOU WILL NOT BE ABLE TO RECOVER THE FUNDS</b><br>without a backup of your currently configured wallet.</span></p><br>');
       this.walletService.resetWallet();
       this.walletService.removeWalletData();
 
@@ -550,7 +610,7 @@ export class ConfigureAppComponent implements OnInit {
 
       this.notifications.sendSuccess(`Successfully deleted locally stored data and reset the settings!`);
 
-      // Get a new random API server or Nault will get stuck in offline mode
+      // Get a new random API server or BtcoNault will get stuck in offline mode
       this.updateServerSettings();
     } catch (err) {}
   }

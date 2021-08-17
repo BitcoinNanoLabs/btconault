@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "nault": {
+    "btconault": {
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
@@ -20,7 +20,8 @@
             "assets": [
               "src/assets",
               "src/pow.wasm",
-              "src/404.html"
+              "src/404.html",
+              "src/manifest.webmanifest"
             ],
             "styles": [
               "src/styles.less"
@@ -71,7 +72,9 @@
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.prod.ts"
                 }
-              ]
+              ],
+              "serviceWorker": true,
+              "ngswConfigPath": "ngsw-config.json"
             },
             "desktop": {
               "budgets": [
@@ -101,21 +104,21 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "nault:build"
+            "browserTarget": "btconault:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "nault:build:production"
+              "browserTarget": "btconault:build:production"
             },
             "desktop": {
-              "browserTarget": "nault:build:desktop"
+              "browserTarget": "btconault:build:desktop"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "nault:build"
+            "browserTarget": "btconault:build"
           }
         },
         "test": {
@@ -131,7 +134,8 @@
             ],
             "assets": [
               "src/assets",
-              "src/pow.wasm"
+              "src/pow.wasm",
+              "src/manifest.webmanifest"
             ]
           }
         },
@@ -149,7 +153,7 @@
         }
       }
     },
-    "nault-e2e": {
+    "btconault-e2e": {
       "root": "e2e",
       "sourceRoot": "e2e",
       "projectType": "application",
@@ -158,7 +162,7 @@
           "builder": "@angular-devkit/build-angular:protractor",
           "options": {
             "protractorConfig": "./protractor.conf.js",
-            "devServerTarget": "nault:serve"
+            "devServerTarget": "btconault:serve"
           }
         },
         "lint": {
@@ -175,7 +179,7 @@
       }
     }
   },
-  "defaultProject": "nault",
+  "defaultProject": "btconault",
   "schematics": {
     "@schematics/angular:component": {
       "prefix": "app",

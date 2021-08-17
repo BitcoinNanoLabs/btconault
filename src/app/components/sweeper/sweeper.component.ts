@@ -66,7 +66,7 @@ export class SweeperComponent implements OnInit {
     private api: ApiService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
-    private btcoBlock: NanoBlockService,
+    private nanoBlock: NanoBlockService,
     private util: UtilService,
     private route: Router) {
       if (this.route.getCurrentNavigation().extras.state && this.route.getCurrentNavigation().extras.state.seed) {
@@ -219,7 +219,7 @@ export class SweeperComponent implements OnInit {
     // validate btco seed or private key
     if (key.length === 64) {
       if (btcocurrency.checkSeed(key)) {
-        return 'btco_seed';
+        return 'nano_seed';
       }
     }
     // validate bip39 seed
@@ -266,14 +266,14 @@ export class SweeperComponent implements OnInit {
       const data = await this.api.process(block.block, TxType.send);
       if (data.hash) {
         const blockInfo = await this.api.blockInfo(data.hash);
-        let btcoAmountSent = null;
+        let nanoAmountSent = null;
         if (blockInfo.amount) {
-          btcoAmountSent = this.util.btco.rawToMBtco(blockInfo.amount);
-          this.totalSwept = this.util.big.add(this.totalSwept, btcoAmountSent);
+          nanoAmountSent = this.util.btco.rawToMBtco(blockInfo.amount);
+          this.totalSwept = this.util.big.add(this.totalSwept, nanoAmountSent);
         }
         this.notificationService.sendInfo('Account ' + address + ' was swept and ' +
-        (btcoAmountSent ? (btcoAmountSent.toString(10) + ' Nano') : '') + ' transferred to ' + this.destinationAccount, {length: 15000});
-        this.appendLog('Funds transferred ' + (btcoAmountSent ? ('(' + btcoAmountSent.toString(10) + ' Nano)') : '') + ': ' + data.hash);
+        (nanoAmountSent ? (nanoAmountSent.toString(10) + ' Nano') : '') + ' transferred to ' + this.destinationAccount, {length: 15000});
+        this.appendLog('Funds transferred ' + (nanoAmountSent ? ('(' + nanoAmountSent.toString(10) + ' Nano)') : '') + ': ' + data.hash);
         console.log(this.adjustedBalance + ' raw transferred to ' + this.destinationAccount);
       } else {
         this.notificationService.sendWarning(`Failed processing block.`);
@@ -378,8 +378,8 @@ export class SweeperComponent implements OnInit {
       Object.keys(data.blocks).forEach(function(key) {
         raw = this.util.big.add(raw, data.blocks[key].amount);
       }.bind(this));
-      const btcoAmount = this.util.btco.rawToMBtco(raw);
-      const pending = {count: Object.keys(data.blocks).length, raw: raw, BTCO: btcoAmount, blocks: data.blocks};
+      const nanoAmount = this.util.btco.rawToMBtco(raw);
+      const pending = {count: Object.keys(data.blocks).length, raw: raw, BTCO: nanoAmount, blocks: data.blocks};
       const row = 'Found ' + pending.count + ' pending containing total ' + pending.BTCO + ' BTCO';
       this.appendLog(row);
 
@@ -416,7 +416,7 @@ export class SweeperComponent implements OnInit {
     let balance = 0; // balance will be 0 if open block
     this.adjustedBalance = balance.toString();
     let previous = null; // previous is null if we create open block
-    this.representative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
+    this.representative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
     let subType = 'open';
 
     // retrive from RPC
@@ -497,7 +497,7 @@ export class SweeperComponent implements OnInit {
       }
 
       // btco seed or private key
-      if (keyType === 'btco_seed' || seed !== '' || keyType === 'bip39_seed') {
+      if (keyType === 'nano_seed' || seed !== '' || keyType === 'bip39_seed') {
         // check if a private key first (no index)
         this.appendLog('Checking if input is a private key');
         if (seed === '') { // seed from input, no mnemonic
@@ -567,9 +567,8 @@ export class SweeperComponent implements OnInit {
     // let user confirm account
     const UIkit = window['UIkit'];
     try {
-      await UIkit.modal.confirm('<p style="text-align: center;">You are about to <b>empty the source wallet</b>.<br> \
-      Be sure to have access to the destination account, as in having the corresponding seed.<br><br> \
-      <b>Without the destination seed - ALL FUNDS MAY BE UNRECOVERABLE</b></p>');
+      const msg = '<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">You are about to empty the source wallet, which will <b>transfer all funds from it to the destination address</b>.</span><br><br><b style="font-size: 18px;">Before continuing, make sure you (or someone) have saved the Nano seed and/or mnemonic of the specified destination address</b>.<br><br><span style="font-size: 18px;"><b>YOU WILL NOT BE ABLE TO RECOVER THE FUNDS</b><br>without a backup of the specified destination address.</span></p><br>';
+      await UIkit.modal.confirm(msg);
       this.sweepContinue();
     } catch (err) {
       console.log(err);

@@ -1,6 +1,6 @@
 <div class="uk-animation-slide-left-small" uk-grid>
   <div class="uk-width-1-1">
-    <h2 class="uk-heading-divider">Configure Nault</h2>
+    <h2 class="uk-heading-divider">Configure BtcoNault</h2>
 
     <div class="uk-card uk-card-default uk-margin">
       <div class="uk-card-header">
@@ -8,6 +8,23 @@
       </div>
       <div class="uk-card-body">
         <div uk-grid>
+
+          <div class="uk-width-1-1">
+            <div class="uk-form-horizontal">
+
+              <div class="uk-margin">
+                <label class="uk-form-label" for="languageselector">
+                  {{ 'configure-app.language' | transloco }}
+                </label>
+                <div class="uk-form-controls">
+                  <select class="uk-select" [(ngModel)]="selectedLanguage" id="languageselector">
+                    <option *ngFor="let language of languages" [value]="language.id">{{ language.label }}</option>
+                  </select>
+                </div>
+              </div>
+
+            </div>
+          </div>
 
           <div class="uk-width-1-1">
             <div class="uk-form-horizontal">
@@ -24,22 +41,35 @@
             </div>
           </div>
 
-          <!--<div class="uk-width-1-1">-->
-            <!--<div class="uk-form-horizontal">-->
+          <div class="uk-width-1-1">
+            <div class="uk-form-horizontal">
 
-              <!--<div class="uk-margin">-->
-                <!--<label class="uk-form-label">Account Prefix <span uk-icon="icon: info;" uk-tooltip title="Change the Nano account prefix used throughout the application.  Both are valid when sending"></span></label>-->
-                <!--<div class="uk-form-controls">-->
+              <div class="uk-margin">
+                <label class="uk-form-label" for="form-horizontal-select">Night Mode</label>
+                <div class="uk-form-controls">
+                  <select class="uk-select" [(ngModel)]="selectedNightModeOption" id="form-horizontal-select">
+                    <option *ngFor="let nightModeOption of nightModeOptions" [value]="nightModeOption.value">{{ nightModeOption.name }}</option>
+                  </select>
+                </div>
+              </div>
 
-                  <!--<div class="uk-inline uk-width-1-1">-->
-                    <!--<select class="uk-select" [(ngModel)]="selectedPrefix">-->
-                      <!--<option *ngFor="let prefix of prefixOptions" [value]="prefix.value">{{ prefix.name }}</option>-->
-                    <!--</select>-->
-                  <!--</div>-->
-                <!--</div>-->
-              <!--</div>-->
-            <!--</div>-->
-          <!--</div>-->
+            </div>
+          </div>
+
+          <div class="uk-width-1-1">
+            <div class="uk-form-horizontal">
+
+              <div class="uk-margin">
+                <label class="uk-form-label" for="form-horizontal-select">Identicons</label>
+                <div class="uk-form-controls">
+                  <select class="uk-select" [(ngModel)]="selectedIdenticonOption" id="form-horizontal-select">
+                    <option *ngFor="let identiconOption of identiconOptions" [value]="identiconOption.value">{{ identiconOption.name }}</option>
+                  </select>
+                </div>
+              </div>
+
+            </div>
+          </div>
 
         </div>
       </div>
@@ -108,11 +138,11 @@
                 </div>
               </div>
               <div class="uk-margin" *ngIf="selectedPoWOption === 'custom'">
-                <label class="uk-form-label">Work Server <span uk-icon="icon: info;" uk-tooltip title="Path to custom work server application. Localhost such as 127.0.0.1:1234 may not work if using nault.cc. Try the desktop app."></span></label>
+                <label class="uk-form-label">Work Server <span uk-icon="icon: info;" uk-tooltip title="Path to custom work server application. Localhost such as 127.0.0.1:1234 may not work if using btconault.cc. Try the desktop app."></span></label>
                   <div class="uk-form-controls">
                       <input [(ngModel)]="customWorkServer" class="uk-input uk-margin-small-bottom" type="text" placeholder="http://my-work-server:port">
                       <span class="uk-text-meta">
-                        This has to be a valid <a href="https://docs.nault.cc/2021/02/13/custom-work-server.html" target="_blank" rel="noopener noreferrer">Nano Work Server</a> endpoint or an API compliant with it.
+                        This has to be a valid <a href="https://docs.btconault.cc/2021/02/13/custom-work-server.html" target="_blank" rel="noopener noreferrer">Nano Work Server</a> endpoint or an API compliant with it.
                       </span>
                   </div>
               </div>
@@ -151,12 +181,13 @@
             <div class="uk-form-horizontal">
 
               <div class="uk-margin">
-                <label class="uk-form-label">Min Receive [BTCO] <span uk-icon="icon: info;" uk-tooltip title="Minimum BTCO amount to receive. Transactions below this amount will be ignored by the wallet both for receiving and in the transaction list.  Set to blank or 0 to accept all transactions."></span></label>
+                <label class="uk-form-label">Min. Receive Amount <span uk-icon="icon: info;" uk-tooltip title="Minimum BTCO amount to receive. Transactions below this amount will be ignored by the wallet both for receiving and in the transactions list.  Set to blank or 0 to accept all transactions."></span></label>
                 <div class="uk-form-controls">
                   <div uk-grid>
                     <div class="uk-width-1-1">
                       <div class="uk-inline uk-width-1-1">
-                        <input [(ngModel)]="minimumReceive" class="uk-input uk-margin-small-bottom" id="form-horizontal-text4" type="text" placeholder="0.000001">
+                        <label class="uk-form-icon uk-link-reset uk-link-muted icon-btco-logo" for="form-horizontal-amount"></label>
+                        <input [(ngModel)]="minimumReceive" class="uk-input" style="padding-left: 52px !important;" id="form-horizontal-text4" type="text" placeholder="Leave blank to accept transactions of any amount">
                       </div>
 
                     </div>

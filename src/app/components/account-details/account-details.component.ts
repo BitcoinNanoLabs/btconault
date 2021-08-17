@@ -1,5 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ActivatedRoute, ChildActivationEnd, Router, NavigationEnd} from '@angular/router';
+import {formatDate} from '@angular/common';
 import {AddressBookService} from '../../services/address-book.service';
 import {ApiService} from '../../services/api.service';
 import {NotificationService} from '../../services/notification.service';
@@ -15,6 +16,7 @@ import {BehaviorSubject} from 'rxjs';
 import * as btcocurrency from 'btcocurrency';
 import {NinjaService} from '../../services/ninja.service';
 import { QrModalService } from '../../services/qr-modal.service';
+import { TranslocoService } from '@ngneat/transloco';
 
 @Component({
   selector: 'app-account-details',
@@ -40,9 +42,16 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
   walletAccount = null;
 
+  timeoutIdAllowingRefresh: any = null;
   qrModal: any = null;
+  mobileAccountMenuModal: any = null;
+  mobileTransactionMenuModal: any = null;
+  mobileTransactionData: any = null;
 
+  showFullDetailsOnSmallViewports = false;
   loadingAccountDetails = false;
+  loadingIncomingTxList = false;
+  loadingTxList = false;
   showAdvancedOptions = false;
   showEditAddressBook = false;
   addressBookModel = '';
@@ -58,6 +67,8 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   priceSub = null;
 
   statsRefreshEnabled = true;
+  dateStringToday = '';
+  dateStringYesterday = '';
 
   // Remote signing
   addressBookResults$ = new BehaviorSubject([]);
@@ -104,9 +115,10 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     private wallet: WalletService,
     private util: UtilService,
     public settings: AppSettingsService,
-    private btcoBlock: NanoBlockService,
+    private nanoBlock: NanoBlockService,
     private qrModalService: QrModalService,
-    private ninja: NinjaService) {
+    private ninja: NinjaService,
+    private translocoService: TranslocoService) {
       // to detect when the account changes if the view is already active
       route.events.subscribe((val) => {
         if (val instanceof NavigationEnd) {
@@ -118,12 +130,17 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   async ngOnInit() {
     const params = this.router.snapshot.queryParams;
     if ('sign' in params) {
-      this.remoteVisible = params.sign === 1;
+      this.remoteVisible = params.sign === '1';
+      this.showAdvancedOptions = params.sign === '1';
     }
+
+    this.showFullDetailsOnSmallViewports = (params.compact !== '1');
 
     this.routerSub = this.route.events.subscribe(event => {
       if (event instanceof ChildActivationEnd) {
         this.loadAccountDetails(); // Reload the state when navigating to itself from the transactions page
+        this.showFullDetailsOnSmallViewports = (this.router.snapshot.queryParams.compact !== '1');
+        this.mobileTransactionMenuModal.hide();
       }
     });
     this.priceSub = this.price.lastPrice$.subscribe(event => {
@@ -134,6 +151,12 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const UIkit = window['UIkit'];
     const qrModal = UIkit.modal('#qr-code-modal');
     this.qrModal = qrModal;
+
+    const mobileAccountMenuModal = UIkit.modal('#mobile-account-menu-modal');
+    this.mobileAccountMenuModal = mobileAccountMenuModal;
+
+    const mobileTransactionMenuModal = UIkit.modal('#mobile-transaction-menu-modal');
+    this.mobileTransactionMenuModal = mobileTransactionMenuModal;
 
     await this.loadAccountDetails();
     this.addressBook.loadAddressBook();
@@ -180,6 +203,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.accountID = '';
     this.addressBookEntry = null;
     this.addressBookModel = '';
+    this.showEditAddressBook = false;
     this.walletAccount = null;
     this.account = {};
     this.qrCodeImage = null;
@@ -241,23 +265,31 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   async loadAccountDetails(refresh= false) {
     if (refresh && !this.statsRefreshEnabled) return;
     this.statsRefreshEnabled = false;
-    setTimeout(() => this.statsRefreshEnabled = true, 5000);
+
+    if (this.timeoutIdAllowingRefresh != null) {
+      clearTimeout(this.timeoutIdAllowingRefresh);
+    }
+    this.timeoutIdAllowingRefresh = setTimeout(() => this.statsRefreshEnabled = true, 5000);
 
     this.pendingBlocks = [];
 
-    if (this.accountID !== this.router.snapshot.params.account) {
-      this.clearAccountVars();
-      this.loadingAccountDetails = true;
-    }
+    this.clearAccountVars();
+    this.loadingAccountDetails = true;
 
-    this.accountID = this.router.snapshot.params.account;
-    this.generateReceiveQR(this.accountID);
+    const accountID = this.router.snapshot.params.account;
+    this.accountID = accountID;
+    this.generateReceiveQR(accountID);
 
-    this.addressBookEntry = this.addressBook.getAccountName(this.accountID);
+    this.addressBookEntry = this.addressBook.getAccountName(accountID);
     this.addressBookModel = this.addressBookEntry || '';
-    this.walletAccount = this.wallet.getWalletAccount(this.accountID);
+    this.walletAccount = this.wallet.getWalletAccount(accountID);
 
-    this.account = await this.api.accountInfo(this.accountID);
+    this.account = await this.api.accountInfo(accountID);
+
+    if (accountID !== this.accountID) {
+      // Navigated to a different account while account info was loading
+      return;
+    }
 
     if (!this.account) {
       this.loadingAccountDetails = false;
@@ -272,32 +304,61 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       let pendingBalance = '0';
       let pending;
 
+      this.pendingBlocks = [];
+      this.loadingIncomingTxList = true;
+
       if (this.settings.settings.minimumReceive) {
         const minAmount = this.util.btco.mbtcoToRaw(this.settings.settings.minimumReceive);
-        pending = await this.api.pendingLimitSorted(this.accountID, 50, minAmount.toString(10));
+        pending = await this.api.pendingLimitSorted(accountID, 50, minAmount.toString(10));
       } else {
-        pending = await this.api.pendingSorted(this.accountID, 50);
+        pending = await this.api.pendingSorted(accountID, 50);
       }
+
+      if (accountID !== this.accountID) {
+        // Navigated to a different account while incoming tx were loading
+        return;
+      }
+
+      this.loadingIncomingTxList = false;
 
       if (pending && pending.blocks) {
         for (const block in pending.blocks) {
           if (!pending.blocks.hasOwnProperty(block)) continue;
+          const transaction = pending.blocks[block];
+
           this.pendingBlocks.push({
-            account: pending.blocks[block].source,
-            amount: pending.blocks[block].amount,
-            amountRaw: new BigNumber( pending.blocks[block].amount || 0 ).mod(this.btco),
-            local_timestamp: pending.blocks[block].local_timestamp,
-            addressBookName: this.addressBook.getAccountName(pending.blocks[block].source) || null,
+            account: transaction.source,
+            amount: transaction.amount,
+            amountRaw: new BigNumber( transaction.amount || 0 ).mod(this.btco),
+            local_timestamp: transaction.local_timestamp,
+            local_date_string: (
+                transaction.local_timestamp
+              ? formatDate(transaction.local_timestamp * 1000, 'MMM d, y', 'en-US')
+              : 'N/A'
+            ),
+            local_time_string: (
+                transaction.local_timestamp
+              ? formatDate(transaction.local_timestamp * 1000, 'HH:mm:ss', 'en-US')
+              : ''
+            ),
+            addressBookName: (
+                this.addressBook.getAccountName(transaction.source)
+              || this.getAccountLabel(transaction.source, null)
+            ),
             hash: block,
             loading: false,
             received: false,
+            isReceivable: true,
           });
 
-          pendingBalance = new BigNumber(pendingBalance).plus(pending.blocks[block].amount).toString(10);
+          pendingBalance = new BigNumber(pendingBalance).plus(transaction.amount).toString(10);
         }
       }
 
       this.account.pending = pendingBalance;
+    } else {
+      // Unset variable that may still be set to true from old request
+      this.loadingIncomingTxList = false;
     }
 
     // If the account doesnt exist, set the pending balance manually
@@ -314,12 +375,30 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.account.pendingRaw = new BigNumber(this.account.pending || 0).mod(this.btco);
     this.account.balanceFiat = this.util.btco.rawToMBtco(this.account.balance || 0).times(this.price.price.lastPrice).toNumber();
     this.account.pendingFiat = this.util.btco.rawToMBtco(this.account.pending || 0).times(this.price.price.lastPrice).toNumber();
-    await this.getAccountHistory(this.accountID);
+
+    await this.getAccountHistory(accountID);
+
+    if (accountID !== this.accountID) {
+      // Navigated to a different account while account history was loading
+      return;
+    }
 
     this.loadingAccountDetails = false;
   }
 
+  getAccountLabel(accountID, defaultLabel) {
+    const walletAccount = this.wallet.wallet.accounts.find(a => a.id === accountID);
+
+    if (walletAccount == null) {
+      return defaultLabel;
+    }
+
+    return (this.translocoService.translate('general.account') + '#' + walletAccount.index);
+  }
+
   ngOnDestroy() {
+    this.mobileAccountMenuModal.hide();
+    this.mobileTransactionMenuModal.hide();
     if (this.routerSub) {
       this.routerSub.unsubscribe();
     }
@@ -333,29 +412,83 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.qrCodeImage = qrCode;
   }
 
-  async getAccountHistory(account, resetPage = true) {
+  updateTodayYesterdayDateStrings() {
+    const unixTimeNow = Date.now();
+
+    this.dateStringToday = formatDate( unixTimeNow, 'MMM d, y', 'en-US' );
+    this.dateStringYesterday = formatDate( unixTimeNow - 86400000, 'MMM d, y', 'en-US' );
+  }
+
+  async getAccountHistory(accountID, resetPage = true) {
     if (resetPage) {
+      this.accountHistory = [];
       this.pageSize = 25;
     }
-    const history = await this.api.accountHistory(account, this.pageSize, true);
+
+    this.loadingTxList = true;
+    this.updateTodayYesterdayDateStrings();
+
+    const history = await this.api.accountHistory(accountID, this.pageSize, true);
+
+    if (accountID !== this.accountID) {
+      // Navigated to a different account while account history was loading
+      return;
+    }
+
     const additionalBlocksInfo = [];
+
+    const accountConfirmationHeight = (
+        this.account.confirmation_height
+      ? parseInt(this.account.confirmation_height, 10)
+      : null
+    );
 
     if (history && history.history && Array.isArray(history.history)) {
       this.accountHistory = history.history.map(h => {
+        h.local_date_string = (
+            h.local_timestamp
+          ? formatDate(h.local_timestamp * 1000, 'MMM d, y', 'en-US')
+          : 'N/A'
+        );
+
+        h.local_time_string = (
+            h.local_timestamp
+          ? formatDate(h.local_timestamp * 1000, 'HH:mm:ss', 'en-US')
+          : ''
+        );
+
         if (h.type === 'state') {
           // For Open and receive blocks, we need to look up block info to get originating account
           if (h.subtype === 'open' || h.subtype === 'receive') {
             additionalBlocksInfo.push({ hash: h.hash, link: h.link });
           } else if (h.subtype === 'change') {
             h.link_as_account = h.representative;
-            h.addressBookName = this.addressBook.getAccountName(h.link_as_account) || null;
+            h.addressBookName = (
+                this.addressBook.getAccountName(h.link_as_account)
+              || this.getAccountLabel(h.link_as_account, null)
+            );
           } else {
             h.link_as_account = this.util.account.getPublicAccountID(this.util.hex.toUint8(h.link));
-            h.addressBookName = this.addressBook.getAccountName(h.link_as_account) || null;
+            h.addressBookName = (
+                this.addressBook.getAccountName(h.link_as_account)
+              || this.getAccountLabel(h.link_as_account, null)
+            );
           }
         } else {
-          h.addressBookName = this.addressBook.getAccountName(h.account) || null;
+          h.addressBookName = (
+              this.addressBook.getAccountName(h.account)
+            || this.getAccountLabel(h.account, null)
+          );
         }
+
+        if (
+              (accountConfirmationHeight != null)
+            && (h.height != null)
+            && ( accountConfirmationHeight < parseInt(h.height, 10) )
+          ) {
+            h.confirmed = false;
+        }
+
         return h;
       });
 
@@ -364,24 +497,35 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
       if (additionalBlocksInfo.length) {
         const blocksInfo = await this.api.blocksInfo(additionalBlocksInfo.map(b => b.link));
+
+        if (accountID !== this.accountID) {
+          // Navigated to a different account while block info was loading
+          return;
+        }
+
         for (const block in blocksInfo.blocks) {
           if (!blocksInfo.blocks.hasOwnProperty(block)) continue;
 
           const matchingBlock = additionalBlocksInfo.find(a => a.link === block);
           if (!matchingBlock) continue;
-          const accountInHistory = this.accountHistory.find(h => h.hash === matchingBlock.hash);
-          if (!accountInHistory) continue;
+          const accountHistoryBlock = this.accountHistory.find(h => h.hash === matchingBlock.hash);
+          if (!accountHistoryBlock) continue;
 
           const blockData = blocksInfo.blocks[block];
 
-          accountInHistory.link_as_account = blockData.block_account;
-          accountInHistory.addressBookName = this.addressBook.getAccountName(blockData.block_account) || null;
+          accountHistoryBlock.link_as_account = blockData.block_account;
+          accountHistoryBlock.addressBookName = (
+              this.addressBook.getAccountName(blockData.block_account)
+            || this.getAccountLabel(blockData.block_account, null)
+          );
         }
       }
 
     } else {
       this.accountHistory = [];
     }
+
+    this.loadingTxList = false;
   }
 
   async loadMore() {
@@ -392,8 +536,10 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   }
 
   async saveAddressBook() {
-    const addressBookName = this.addressBookModel.trim();
-    if (!addressBookName) {
+    // Trim and remove duplicate spaces
+    this.addressBookModel = this.addressBookModel.trim().replace(/ +/g, ' ');
+
+    if (!this.addressBookModel) {
       // Check for deleting an entry in the address book
       if (this.addressBookEntry) {
         this.addressBook.deleteAddress(this.accountID);
@@ -405,16 +551,29 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if ( /^Account #\d+$/g.test(this.addressBookModel) === true ) {
+      return this.notifications.sendError(`This name is reserved for wallet accounts without a label`);
+    }
+
+    // Make sure no other entries are using that name
+    const accountIdWithSameName = this.addressBook.getAccountIdByName(this.addressBookModel);
+
+    if ( (accountIdWithSameName !== null) && (accountIdWithSameName !== this.accountID) ) {
+      return this.notifications.sendError(`This name is already in use! Please use a unique name`);
+    }
+
     try {
-      await this.addressBook.saveAddress(this.accountID, addressBookName);
+      const currentBalanceTracking = this.addressBook.getBalanceTrackingById(this.accountID);
+      const currentTransactionTracking = this.addressBook.getTransactionTrackingById(this.accountID);
+      await this.addressBook.saveAddress(this.accountID, this.addressBookModel, currentBalanceTracking, currentTransactionTracking);
     } catch (err) {
-      this.notifications.sendError(err.message);
+      this.notifications.sendError(`Unable to save entry: ${err.message}`);
       return;
     }
 
-    this.notifications.sendSuccess(`Saved address book entry!`);
+    this.notifications.sendSuccess(`Address book entry saved successfully!`);
 
-    this.addressBookEntry = addressBookName;
+    this.addressBookEntry = this.addressBookModel;
     this.showEditAddressBook = false;
   }
 
@@ -497,10 +656,10 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     }
     if (!this.util.string.isNumeric(this.amountFiat)) return;
     const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const btcoVal = this.util.btco.rawToNano(rawAmount).floor();
-    const btcoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
+    const nanoVal = this.util.btco.rawToNano(rawAmount).floor();
+    const nanoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(nanoVal));
 
-    this.amount = btcoAmount.toNumber();
+    this.amount = nanoAmount.toNumber();
   }
 
   searchAddressBook() {
@@ -529,7 +688,10 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     // Remove spaces from the account id
     this.toAccountID = this.toAccountID.replace(/ /g, '');
 
-    this.addressBookMatch = this.addressBook.getAccountName(this.toAccountID);
+    this.addressBookMatch = (
+        this.addressBook.getAccountName(this.toAccountID)
+      || this.getAccountLabel(this.toAccountID, null)
+    );
 
     // const accountInfo = await this.walletService.walletApi.accountInfo(this.toAccountID);
     this.toAccountStatus = null;
@@ -560,8 +722,8 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
   setMaxAmount() {
     this.amountRaw = this.account.balance ? new BigNumber(this.account.balance).mod(this.btco) : new BigNumber(0);
-    const btcoVal = this.util.btco.rawToNano(this.account.balance).floor();
-    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
+    const nanoVal = this.util.btco.rawToNano(this.account.balance).floor();
+    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(nanoVal));
     this.amount = maxAmount.toNumber();
     this.syncFiatPrice();
   }
@@ -585,18 +747,35 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async receivePending(pendingBlock) {
-    const sourceBlock = pendingBlock.hash;
+  showMobileMenuForTransaction(transaction) {
+    this.notifications.removeNotification('success-copied');
+
+    this.mobileTransactionData = transaction;
+    this.mobileTransactionMenuModal.show();
+  }
+
+  onReceiveFundsPress(receivableTransaction) {
+    if (receivableTransaction.loading || receivableTransaction.received) {
+      return;
+    }
+
+    this.receiveReceivableBlock(receivableTransaction);
+  }
+
+  async receiveReceivableBlock(receivableBlock) {
+    const sourceBlock = receivableBlock.hash;
 
     if (this.wallet.walletIsLocked()) {
       return this.notifications.sendWarning(`Wallet must be unlocked`);
     }
-    pendingBlock.loading = true;
+    receivableBlock.loading = true;
 
-    const newBlock = await this.btcoBlock.generateReceive(this.walletAccount, sourceBlock, this.wallet.isLedgerWallet());
+    const createdReceiveBlockHash =
+      await this.nanoBlock.generateReceive(this.walletAccount, sourceBlock, this.wallet.isLedgerWallet());
 
-    if (newBlock) {
-      pendingBlock.received = true;
+    if (createdReceiveBlockHash) {
+      receivableBlock.received = true;
+      this.mobileTransactionMenuModal.hide();
       this.notifications.removeNotification('success-receive');
       this.notifications.sendSuccess(`Successfully received Nano!`, { identifier: 'success-receive' });
       // clear the list of pending blocks. Updated again with reloadBalances()
@@ -607,7 +786,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       }
     }
 
-    pendingBlock.loading = false;
+    receivableBlock.loading = false;
 
     await this.wallet.reloadBalances();
   }
@@ -633,7 +812,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const rawAmount = this.getAmountBaseValue(this.amount || 0);
     this.rawAmount = rawAmount.plus(this.amountRaw);
 
-    const btcoAmount = this.rawAmount.div(this.btco);
+    const nanoAmount = this.rawAmount.div(this.btco);
 
     if (this.amount < 0 || rawAmount.lessThan(0)) return this.notifications.sendWarning(`Amount is invalid`);
     if (from.balanceBN.minus(rawAmount).lessThan(0)) return this.notifications.sendError(`From account does not have enough BTCO`);
@@ -647,7 +826,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const remaining = new BigNumber(from.balance).minus(this.rawAmount);
     const remainingDecimal = remaining.toString(10);
 
-    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
+    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
     const representative = from.representative || defaultRepresentative;
     const blockData = {
       account: this.accountID.replace('xrb_', 'btco_').toLowerCase(),
@@ -699,7 +878,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const openEquiv = !toAcct || !toAcct.frontier; // if open block
 
     const previousBlock = toAcct.frontier || this.zeroHash; // set to zeroes if open block
-    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
+    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
     const representative = toAcct.representative || defaultRepresentative;
 
     const srcBlockInfo = await this.api.blocksInfo([pendingHash]);

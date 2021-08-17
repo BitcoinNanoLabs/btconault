@@ -1,6 +1,6 @@
 import { AppPage } from './app.po';
 
-describe('Nault App', () => {
+describe('BtcoNault App', () => {
   let page: AppPage;
 
   beforeEach(() => {

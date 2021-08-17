@@ -12,7 +12,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list dt,
-.uk-table th, .uk-form-label, .uk-form-icon, .nav-btco-card, .nav-representative-info,
+.uk-table th, .uk-form-label, .uk-form-icon, .btco-card, .nav-representative-info,
 .accounts-dropdown, .nav-container .nav-action-receive, .left-nav > li, .mobile-top-bar,
 .uk-modal-dialog p {
 	font-family: @global-secondary-font-family;
@@ -22,9 +22,13 @@ h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list d
 	border-radius: @global-border-radius-medium;
 }
 
+* {
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
 @media (max-width: 939px) {
-	button, .uk-button {
-		margin-bottom: @nlt-intro-margin / 2!important;
+	.nlt-button-group button {
+		margin-bottom: @nlt-intro-margin / 2 !important;
 	}
 
 	h2:not(.uk-card-title):not(.uk-modal-title) {
@@ -94,6 +98,19 @@ h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list d
 	> p {
 		margin-top: 0;
 	}
+
+	.inline-link {
+		font-weight: 600;
+		color: currentColor;
+		text-decoration: none !important;
+		border-bottom: 2px dotted rgba(255, 255, 255, 0.6);
+		transition: border-color 100ms ease-in-out;
+
+		&:hover {
+			border-bottom-style: solid;
+			border-bottom-color: currentColor;
+		}
+	}
 }
 
 .nlt-dropdown {
@@ -111,10 +128,22 @@ h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list d
 		margin-right: 8px;
 		margin-top: -1px;
 	}
+
+	.nlt-icon {
+		margin-right: 8px;
+	}
+
+	&.nlt-icon-button-inline {
+		display: inline-flex;
+	}
 }
 
 .text-half-muted {
 	color: #81809f;
+}
+
+.text-rep-change {
+	color: #A478E3;
 }
 
 a.fiat-currency-ticker {
@@ -141,8 +170,10 @@ input[type=number] {
 
 .mobile-top-bar {
 	display: none;
-	height: @mobile-top-bar-height;
+	height: @mobile-top-bar-height - 1px;
 	color: #FFF;
+	background-color: #22222A;
+	border-bottom: 1px solid #16161B;
 
 	> .button-column {
 		padding-left: 0;
@@ -151,14 +182,17 @@ input[type=number] {
 			display: flex;
 			align-items: center;
 			margin: 9px 0 8px 14px;
+			cursor: pointer;
 
 			> .uk-icon {
 				margin-right: 10px;
+				color: #5F5F77;
 			}
 
 			> .app-name {
 				font-size: 22px;
-				font-weight: 400;
+				font-weight: 600;
+				margin-top: -1px;
 			}
 		}
 	}
@@ -174,10 +208,14 @@ input[type=number] {
 }
 
 .app-grid {
+	// position: relative;
 	margin-top: 0;
 	overflow: hidden;
 	margin-left: 0;
-	height: 100vh;
+
+	@media (max-width: 939px) {
+		margin-top: @mobile-top-bar-height;
+	}
 }
 
 .content-container {
@@ -186,17 +224,14 @@ input[type=number] {
 	z-index: 1;
 	overflow-x: hidden;
 	overflow-y: scroll;
-	height: 100vh;
 
-	> *:last-child > *:last-child {
+	> *:last-child > .uk-grid > *:last-child {
 		margin-bottom: 20px;
 	}
 
 	@media (max-width: 939px) {
-		margin-top: @mobile-top-bar-height;
-		height: calc(100vh - @mobile-top-bar-height);
 		padding: 15px 15px;
-		transition: transform 0.5s ease;
+		transition: transform 0.3s ease;
 
 		&.nav-expanded {
 			transform: translateX(360px);
@@ -315,6 +350,10 @@ input[type=number] {
 	font-family: 'Roboto Mono', monospace;
 }
 
+.block-hash-monospace {
+	font-family: 'Roboto Mono', monospace;
+}
+
 .btco-address-clickable {
 	display: inline-block;
 	border-bottom: 2px solid transparent;
@@ -328,6 +367,22 @@ input[type=number] {
 
 	&:hover {
 		.btco-address-clickable-hover-styles();
+	}
+}
+
+.block-hash-clickable {
+	text-decoration: none;
+	display: inline-block;
+	border-bottom: 2px solid transparent;
+	transition: border-color 100ms ease-in-out;
+
+	&, &:hover {
+		color: @global-primary-background;
+		text-decoration: none;
+	}
+
+	&:hover {
+		border-color: currentcolor;
 	}
 }
 
@@ -393,9 +448,190 @@ input[type=number] {
 }
 .btco-address-middle {
 	min-width: 1.4em;
+
+	&.is-off {
+		letter-spacing: -4px;
+		margin-right: 4px;
+	}
 }
 .btco-address-suffix {
 	color: #D5AF4E;
+}
+
+.natricon-placeholder > img {
+	opacity: 0.2;
+}
+
+@media (max-width: 939px) {
+	.hide-on-small-viewports {
+		display: none;
+	}
+
+	.notification-container {
+		top: 60px !important;
+	}
+
+	.uk-tooltip {
+		display: none !important;
+	}
+}
+
+@media (min-width: 940px) {
+	.only-on-small-viewports {
+		display: none;
+	}
+}
+
+// Menu modal
+.modal-position-bottom[style*="display: block;"] {
+	display: flex !important;
+	flex-direction: column;
+	justify-content: flex-end;
+}
+
+.uk-modal {
+	.transaction {
+		padding-left: 0 !important;
+		padding-right: 0 !important;
+
+		&:not(.identicons-enabled) {
+			@media (max-width: 443px) {
+				.btco-address-prefix .btco-prefix {
+					display: none;
+				}
+			}
+
+			@media (max-width: 413px) {
+				.btco-address-suffix {
+					display: none;
+				}
+			}
+		}
+
+		&.identicons-enabled {
+			// identicons take up extra 10px
+
+			@media (max-width: 453px) {
+				.btco-address-prefix .btco-prefix {
+					display: none;
+				}
+			}
+
+			@media (max-width: 423px) {
+				.btco-address-suffix {
+					display: none;
+				}
+			}
+		}
+	}
+
+	.menu-header {
+		margin-bottom: -4px;
+		user-select: none;
+	}
+
+	.menu-option {
+		padding: 10px 8px;
+		margin: 10px -8px 0 -8px;
+		font-size: 17px;
+		font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+		cursor: pointer;
+		border-radius: 2px;
+		user-select: none;
+		background: rgba(0, 0, 0, 0);
+		transition: background-color 100ms ease-in-out;
+
+		&:hover, &:active {
+			background: rgba(0, 0, 0, 0.2);
+		}
+
+		> .icon {
+			margin-right: 15px;
+			position: relative;
+
+			&.icon-leave {
+				margin-right: 13px;
+				vertical-align: 1px;
+			}
+
+			&.icon-copy {
+				margin-top: -3px;
+				margin-bottom: -3px;
+				margin-left: -2px;
+				margin-right: 13px;
+			}
+
+			&.icon-download {
+				margin-left: -2px;
+				margin-right: 12px;
+			}
+
+			> .icon-inner {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				transform: translate(-50%, -50%);
+
+				&.icon-user {
+					padding-right: 1px;
+
+					circle, path {
+						stroke-width: 2;
+					}
+				}
+			}
+		}
+	}
+}
+
+// Mobile actions
+.mobile-actions-fixed {
+	display: flex;
+	align-items: flex-end;
+	position: fixed;
+	bottom: 0;
+	left: 11px;
+	width: calc(100% - 22px);
+	height: 160px;
+	background: linear-gradient( 0deg, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) ) 0%;
+	pointer-events: none;
+
+	> .actions-area {
+		display: flex;
+		width: 100%;
+		height: 66px;
+		padding: 40px 0 20px 0;
+		pointer-events: all;
+
+		> button {
+			flex: 1;
+			border: 0;
+			margin: 8px 12px;
+			background: #4E91E0;
+			border-radius: 30px;
+			color: #FFF;
+			font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+			font-size: 17px;
+			font-weight: 400;
+			text-transform: uppercase;
+			cursor: pointer;
+			transition: background-color 100ms ease-in-out;
+
+			&:hover, &:active {
+				background: #3883DC;
+			}
+		}
+	}
+}
+
+.nav-expanded .mobile-actions-fixed, .nav-animating .mobile-actions-fixed {
+	display: none;
+}
+
+@media (min-width: 940px) {
+	.mobile-actions-fixed {
+		display: none;
+	}
 }
 
 // Unlock Wallet modal
@@ -408,7 +644,397 @@ input[type=number] {
 	color: #F79743;
 }
 
+// Account Snippet (used for operations to/from)
+.account-snippet-container {
+	margin: -10px;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.account-snippet {
+	flex: 1;
+	margin: 10px;
+
+	max-width: calc(50% - 20px);
+
+	.force-one-per-row() {
+		max-width: unset;
+		flex-basis: 100%;
+	}
+	@media (max-width: 849px) {
+		.force-one-per-row();
+	}
+	@media (min-width: 940px) and (max-width: 1200px) {
+		.force-one-per-row();
+	}
+
+	> .uk-card {
+		> .uk-card-header, > .uk-card-body {
+			padding: 10px 15px;
+		}
+
+		min-width: 235px;
+		&.identicons-enabled {
+			min-width: 305px;
+		}
+	}
+
+	.snippet-caption {
+		margin-bottom: 15px;
+	}
+
+	.account-container {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+
+		.btco-identicon {
+			display: inline-block;
+			width: 54px;
+			height: 54px;
+			margin-right: 20px;
+			margin-left: 1px;
+
+			.canvas-container canvas {
+				border-radius: 3px;
+			}
+		}
+
+		.identicon-address-book-row {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			min-height: 55px;
+		}
+
+		.account-label {
+			padding: 15px 12px;
+		}
+
+		.btco-address-clickable {
+			margin-top: 10px;
+		}
+	}
+
+	.snippet-address-actions {
+		margin-bottom: 5px !important;
+		flex-shrink: 0;
+		padding-left: 10px;
+	}
+
+	@media (max-width: 349px) {
+		.btco-address-clickable > .uk-flex {
+			flex-wrap: wrap;
+			width: 125px;
+
+			.btco-address-middle {
+				width: 0;
+			}
+
+			.btco-address-suffix {
+				margin-left: 69px; // Nice
+			}
+		}
+	}
+}
+
+// Accounts list
+.accounts-list {
+	.account-column {
+		min-width: 155px;
+
+		&.identicons-enabled {
+			min-width: 225px;
+		}
+	}
+
+	.btco-identicon {
+		width: 54px;
+		height: 54px;
+		margin-right: 25px;
+
+		.canvas-container canvas {
+			border-radius: 3px;
+		}
+	}
+
+	.btco-address-clickable {
+		margin-top: 2px;
+	}
+
+	.account-amounts-column, .compact-account-amounts {
+		.account-amounts-primary {
+			margin-bottom: 3px;
+
+			.amount-integer,
+			.amount-fractional,
+			.currency-name {
+				font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+				font-size: 16px;
+			}
+
+			.amount-integer {
+				font-weight: 700;
+			}
+
+			.amount-fractional {
+				font-weight: 500;
+			}
+
+			.currency-name {
+				font-weight: 400;
+				margin-left: 5px;
+			}
+		}
+
+		.incoming-label {
+			display: inline-block;
+			background: #4A90E2;
+			border-radius: 20px;
+			font-size: 13px;
+			padding: 2px 10px;
+			margin-right: 9px;
+			margin-top: 4px;
+			vertical-align: 1px;
+			padding-bottom: 1px;
+			text-transform: uppercase;
+			color: #FFF;
+		}
+	}
+
+	.account-amounts-column {
+		.incoming-label {
+			/* Displaying 'New' label when under 1500px viewport */
+			> .text-full {
+				display: none;
+			}
+
+			> .text-snippet {
+				display: inline-block;
+			}
+
+			@media (min-width: 1500px) {
+				> .text-full {
+					display: inline-block;
+				}
+
+				> .text-snippet {
+					display: none;
+				}
+			}
+		}
+	}
+
+	.compact-account-amounts {
+		.incoming-label {
+			margin-bottom: 7px;
+
+			/* Always displaying the amount */
+			> .text-full {
+				display: inline-block;
+			}
+
+			> .text-snippet {
+				display: none;
+			}
+		}
+
+		.amounts {
+			display: block;
+		}
+	}
+
+	.account-actions-column {
+		.icon-delete-account {
+			display: inline-block;
+		}
+
+		.button-delete-account {
+			display: none;
+		}
+	}
+
+	.compact-account-actions {
+		.icon-delete-account {
+			display: none;
+		}
+
+		.button-delete-account {
+			display: block;
+		}
+	}
+
+	.compact-account-amounts, .compact-account-actions {
+		display: none;
+	}
+
+	@media (max-width: 469px) {
+		.compact-account-amounts, .compact-account-actions {
+			display: block;
+			margin-top: 5px;
+			margin-bottom: 15px;
+		}
+
+		.account-amounts-column, .account-actions-column {
+			display: none;
+		}
+	}
+
+	@media (max-width: 599px) {
+		.btco-identicon {
+			margin-right: 20px;
+		}
+
+		.btco-address-actions {
+			display: none !important;
+		}
+
+		.btco-address-clickable > .uk-flex {
+			.btco-address-middle {
+				width: 0;
+			}
+		}
+
+		.account-amounts-column {
+			.account-amounts-primary {
+				.amount-integer,
+				.amount-fractional,
+				.currency-name {
+					font-size: 13px;
+				}
+
+				.currency-name {
+					display: block;
+					margin-top: -2px;
+				}
+
+				.incoming-label {
+					font-size: 10px;
+					padding: 2px 8px;
+					margin-right: 6px;
+					margin-bottom: 4px;
+				}
+			}
+
+			.account-amounts-converted {
+				font-size: 13px;
+				margin-top: 10px;
+			}
+		}
+	}
+}
+
+// Account Details header
+.account-details-header {
+	.btco-identicon {
+		width: 96px;
+		height: 96px;
+		margin-right: -5px;
+
+		.canvas-container canvas {
+			border-radius: 6px;
+		}
+	}
+}
+
+.transactions-list-header {
+	@media (max-width: 939px) {
+		justify-content: space-between;
+		padding: 0 20px;
+	}
+}
+
+// Transactions list (mobile)
+.transactions-list-mobile {
+	.date-header {
+		font-size: 14px;
+		margin: 15px 0 8px 20px;
+
+		&:first-child {
+			margin-top: 0;
+		}
+	}
+
+	.rounded-area {
+		border-radius: 10px;
+		padding: 20px 14px;
+		margin-bottom: 10px;
+		user-select: none;
+		background: #eaf5ff;
+
+		&.interactable {
+			transition: background-color 100ms ease-in-out;
+			cursor: pointer;
+
+			&:hover, &:focus {
+				background: #d1e9ff;
+
+				.type-identicon-combined .type-icon-container {
+					background: #d1e9ff;
+				}
+			}
+
+			&.transaction:not(.identicons-enabled) {
+				@media (max-width: 410px) {
+					.btco-address-prefix .btco-prefix {
+						display: none;
+					}
+				}
+
+				@media (max-width: 369px) {
+					.btco-address-suffix {
+						display: none;
+					}
+				}
+			}
+
+			&.transaction.identicons-enabled {
+				// identicons take up extra 10px
+				@media (max-width: 420px) {
+					.btco-address-prefix .btco-prefix {
+						display: none;
+					}
+				}
+
+				@media (max-width: 379px) {
+					.btco-address-suffix {
+						display: none;
+					}
+				}
+			}
+		}
+
+		.type-identicon-combined {
+			.btco-identicon {
+				.canvas-container canvas {
+					border-radius: 3px;
+				}
+			}
+
+			.type-icon-container {
+				background: #eaf5ff;
+				transition: background-color 100ms ease-in-out;
+			}
+		}
+	}
+
+	.more-results {
+		text-align: center;
+	}
+}
+
 // Transactions list
+.icon-transactions-refresh {
+	&.spinner {
+		margin-left: 3px;
+		margin-right: 2px;
+	}
+
+	&.disabled {
+		cursor: default;
+	}
+}
+
 .transactions-list {
 	.type-column {
 		min-width: 25px;
@@ -426,19 +1052,37 @@ input[type=number] {
 	}
 
 	.account-column {
-		.account-label {
-			margin-bottom: 6px;
+		.account-container {
+			text-decoration: none;
+
+			.identicon-name-row {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				height: 28px;
+				padding-bottom: 8px;
+
+				.btco-identicon {
+					display: inline-block;
+					width: 27px;
+					height: 27px;
+					margin-right: 12px;
+					margin-left: 1px;
+					flex-shrink: 0;
+
+					.canvas-container canvas {
+						border-radius: 3px;
+					}
+				}
+			}
+
+			.btco-address-clickable {
+				flex-shrink: 0;
+			}
 		}
 
-		.account-label-placeholder {
-			height: 32px;
-			width: 1px;
-			display: inline-block;
-			vertical-align: -14px;
-		}
-
-		.btco-address-clickable {
-			flex-shrink: 0;
+		.btco-address-actions {
+			margin-bottom: 11px !important;
 		}
 
 		.block-hash {
@@ -453,7 +1097,7 @@ input[type=number] {
 		}
 
 		.arrow-down {
-			margin: 3px 0 14px -2px;
+			margin: 1px 0 16px -2px;
 		}
 	}
 
@@ -482,6 +1126,27 @@ input[type=number] {
 		&.rep-change {
 			color: #A478E3;
 		}
+
+		.compact-actions-date {
+			margin-top: 20px;
+
+			button {
+				font-size: 12px;
+				padding: 8px 20px;
+			}
+
+			.button-container + .button-container {
+				margin-top: 10px;
+			}
+
+			.label-unconfirmed {
+				display: none;
+			}
+
+			.date-unknown {
+				display: none;
+			}
+		}
 	}
 
 	.date-column {
@@ -508,14 +1173,18 @@ input[type=number] {
 	.account-column {
 		min-width: 155px;
 		width: 45%;
-
-		.btco-address-actions {
-			margin-bottom: 22px !important;
-		}
 	}
 
 	.amount-column {
 		width: 55%;
+
+		.compact-actions-date {
+			display: block;
+
+			.transaction-date {
+				font-size: 15px;
+			}
+		}
 	}
 
 	.date-column {
@@ -568,6 +1237,16 @@ input[type=number] {
 				margin-left: 0;
 				display: block;
 			}
+
+			.compact-actions-date {
+				.transaction-date {
+					font-size: 14px;
+
+					.date, .time {
+						display: block;
+					}
+				}
+			}
 		}
 	}
 
@@ -575,16 +1254,16 @@ input[type=number] {
 		.account-column {
 			width: 45%;
 			min-width: 210px;
-
-			.btco-address-actions {
-				margin-bottom: 11px !important;
-			}
 		}
 
 		.amount-column {
 			width: 35%;
 			text-align: left;
 			padding-left: 30px;
+
+			.compact-actions-date {
+				display: none;
+			}
 		}
 
 		.date-column {
@@ -597,15 +1276,15 @@ input[type=number] {
 		.account-column {
 			width: 55%;
 			min-width: 210px;
-
-			.btco-address-actions {
-				margin-bottom: 11px !important;
-			}
 		}
 
 		.amount-column {
 			width: 25%;
 			text-align: left;
+
+			.compact-actions-date {
+				display: none;
+			}
 		}
 
 		.date-column {
@@ -636,6 +1315,12 @@ input[type=number] {
 	background: #F4FAFF;
 }
 
+@media (max-width: 599px) {
+	.send-types-tab {
+		font-size: .8rem;
+	}
+}
+
 // Representatives page
 .delegating-account-row {
 	border-top: none !important;
@@ -650,6 +1335,30 @@ input[type=number] {
 	border-bottom: 1px solid #DCE9F9 !important;
 }
 
+@media (max-width: 360px) {
+	.representative-row .representative-name-column .representative-address {
+		.btco-address-prefix .btco-prefix {
+			display: none;
+		}
+
+		.btco-address-middle {
+			width: 0;
+		}
+	}
+}
+
+@media (max-width: 377px) {
+	.delegating-account .descendant-details .descendant-address {
+		.btco-address-prefix .btco-prefix {
+			display: none;
+		}
+
+		.btco-address-middle {
+			width: 0;
+		}
+	}
+}
+
 // App Settings page
 #node-stats-table tr:not(:last-child) td {
 	border-bottom: 1px solid #dce9f9;
@@ -659,6 +1368,61 @@ input[type=number] {
 .mne-cont {
 	display: block;
 	border-bottom: 1px dashed #449af373;
+}
+
+// Welcome page
+.welcome-features-container {
+	display: grid;
+	grid-template-columns: 1fr;
+	grid-gap: 20px;
+
+	@media (min-width: 1200px) {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	> .feature {
+		display: flex;
+		flex-direction: column;
+		background: #FCFCFF;
+
+		> .icon {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			margin-bottom: 20px;
+
+			> svg {
+				width: 60%;
+				max-width: 200px;
+				color: #4A90E2;
+
+				> * {
+					stroke: currentcolor;
+				}
+			}
+		}
+
+		> h2 {
+			color: #4A90E2;
+			margin: 0;
+			font-weight: 400;
+			line-height: 1.2;
+			font-size: 25px;
+			margin-bottom: 15px;
+			text-align: center;
+		}
+
+		> p {
+			font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+			margin: 0;
+			line-height: 1.6;
+			font-size: 16px;
+		}
+
+		> p + p {
+			margin-top: 10px;
+		}
+	}
 }
 
 // Wallet Setup page
@@ -744,11 +1508,15 @@ input[type=number] {
 	}
 }
 
+.nlt-button-success {
+	background-color: #16A670 !important;
+}
+
 .nlt-page-intro {
 	margin-bottom: @nlt-intro-margin;
 }
 
-@media (min-width: @breakpoint-xsmall-max) {
+@media (min-width: 960px) {
 	.nlt-button-group button {
 		margin-left: @global-margin;
 	}

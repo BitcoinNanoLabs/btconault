@@ -17,7 +17,7 @@ export class DeeplinkService {
   ) { }
 
   navigate(deeplink: string): boolean {
-    const btco_scheme = /^(btco|btcorep|btcoseed|btcokey|btcosign|btcoprocess|https):.+$/g;
+    const nano_scheme = /^(btco|btcorep|btcoseed|btcokey|btcosign|btcoprocess|https):.+$/g;
 
     if (this.util.account.isValidAccount(deeplink)) {
       // Got address, routing to send...
@@ -27,7 +27,7 @@ export class DeeplinkService {
       // Seed
       this.handleSeed(deeplink);
 
-    } else if (btco_scheme.test(deeplink)) {
+    } else if (nano_scheme.test(deeplink)) {
       // This is a valid Nano scheme URI
       const url = new URL(deeplink);
 

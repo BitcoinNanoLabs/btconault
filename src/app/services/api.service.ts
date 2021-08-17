@@ -7,8 +7,7 @@ import { TxType } from './util.service';
 
 @Injectable()
 export class ApiService {
-  storeKey = `btcovault-active-difficulty`;
-  difficultyCacheDuration = 60; // time to keep active_difficulty in cache [sec]
+  storeKey = `nanovault-active-difficulty`;
   constructor(private http: HttpClient, private node: NodeService, private appSettings: AppSettingsService) { }
 
   private async request(action, data, skipError, url = ''): Promise<any> {
@@ -100,8 +99,13 @@ export class ApiService {
   async process(block, subtype: TxType): Promise<{ hash: string, error?: string }> {
     return await this.request('process', { block: JSON.stringify(block), watch_work: 'false', subtype: TxType[subtype] }, false);
   }
-  async accountHistory(account, count = 25, raw = false): Promise<{history: any }> {
-    return await this.request('account_history', { account, count, raw }, false);
+  async accountHistory(account, count = 25, raw = false, offset = 0, reverse = false): Promise<{history: any }> {
+    // use unlimited count if 0
+    if (count === 0) {
+      return await this.request('account_history', { account, raw, offset, reverse}, false);
+    } else {
+      return await this.request('account_history', { account, count, raw, offset, reverse}, false);
+    }
   }
   async accountInfo(account): Promise<any> {
     return await this.request('account_info', { account, pending: true, representative: true, weight: true }, false);
@@ -123,43 +127,9 @@ export class ApiService {
     return await this.request('version', { }, true);
   }
   async confirmationQuorum(): Promise<{quorum_delta: string, online_weight_quorum_percent: number, online_weight_minimum: string,
-    online_stake_total: string, peers_stake_total: string, peers_stake_required: string }> {
+    online_stake_total: string, trended_stake_total: string, peers_stake_total: string }> {
     return await this.request('confirmation_quorum', { }, true);
   }
-  async activeDifficulty(): Promise<{network_current: string, network_receive_current: string }> {
-    let latestDifficulty;
-    // try cached value first
-    const difficultyStore = localStorage.getItem(this.storeKey);
-    if (difficultyStore) {
-      latestDifficulty = JSON.parse(difficultyStore);
-    }
-    // cache duration has expired, get new value via API
-    if (!difficultyStore || Date.now() > latestDifficulty.latest + (this.difficultyCacheDuration * 1000)) {
-      // ignore API errors (false flag). If backend does not support this we use default difficulty downstream
-      const networkDifficulty = await this.request('active_difficulty', { }, true);
-      // only store if valid response
-      if (networkDifficulty?.network_current?.length === 16 && networkDifficulty?.network_receive_current?.length === 16) {
-        console.log('New active difficulty used for send: ' + networkDifficulty.network_current);
-        console.log('New active difficulty used for receive: ' + networkDifficulty.network_receive_current);
-        latestDifficulty = {
-          latest: Date.now(),
-          network_current: networkDifficulty.network_current,
-          network_receive_current: networkDifficulty.network_receive_current
-        };
-      } else {
-        console.log('Failed to get active_difficulty from server. Using default instead.');
-        latestDifficulty = {
-          latest:  Date.now(),
-          network_current: '',
-          network_receive_current: '',
-        };
-      }
-    }
-    // save to storage even if failed because we want cache duration
-    localStorage.setItem(this.storeKey, JSON.stringify(latestDifficulty));
-    return latestDifficulty;
-  }
-
   public deleteCache() {
     localStorage.removeItem(this.storeKey);
   }

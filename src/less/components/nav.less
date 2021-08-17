@@ -32,6 +32,8 @@
 }
 
 .nav-container {
+	display: flex;
+	flex-direction: column;
 	background: @nav-background-color;
 	color: #868AB0;
 	padding-left: 0;
@@ -45,8 +47,6 @@
 	@media (max-width: 939px) {
 		position: absolute;
 		width: 360px;
-		height: calc(100vh - @mobile-top-bar-height);
-		margin-top: @mobile-top-bar-height;
 	}
 
 	// Scrollbar - Gecko (Firefox)
@@ -104,246 +104,6 @@
 .nav-container .nav-separator-top {
 	border-top: 1px solid @nav-border-color;
 	padding-top: 20px;
-}
-
-.nav-container .nav-btco-card {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	margin: 20px;
-	border-radius: 10px;
-	background: #4E91E0;
-	position: relative;
-	overflow: hidden;
-
-	height: 11vw;
-	min-height: 155px;
-	@media (max-width: 939px) {
-		height: 155px;
-		min-height: unset;
-	}
-
-	&.is-wallet {
-		@wallet-card-background-color: #2F3241;
-		background: @wallet-card-background-color;
-
-		> .logo {
-			filter: hue-rotate(15deg) saturate(0.6) brightness(0.40);
-		}
-
-		&::after {
-			content: '';
-			position: absolute;
-			width: calc(100% - 10px);
-			height: calc(100% - 10px);
-			display: block;
-			border: 1px dashed #555573;
-			margin: 4px;
-			border-radius: 10px;
-			pointer-events: none;
-		}
-
-		> .card-contents > .account-name-container > .select-button.open > .circle {
-			background: @wallet-card-background-color;
-		}
-	}
-
-	&.incoming-card {
-		background: #272837;
-
-		min-height: 125px;
-		height: 125px;
-
-		@media (min-width: 1500px) {
-			min-height: 140px;
-			height: 140px;
-		}
-	}
-
-	> .logo {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		background: url('../../assets/img/btco-mark.svg');
-		background-size: 170%;
-		background-position: 29% 30%;
-		background-repeat: no-repeat;
-	}
-
-	> .card-contents {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-	}
-
-	> .card-contents > .account-name-container {
-		display: flex;
-		align-items: center;
-		margin: 14px 12px 13px 17px;
-
-		> .name {
-			color: #FFF;
-			margin-right: 10px;
-			text-decoration: none;
-			border-bottom: 2px solid transparent;
-			transition: border-color 100ms ease-in-out;
-			padding-top: 1px;
-			.truncated-text();
-
-			font-size: 14px;
-			@media (min-width: 1500px) {
-				font-size: 18px;
-			}
-
-			&:hover {
-				border-color: #FFF;
-			}
-		}
-
-		> .select-button {
-			display: flex;
-			margin-top: 1px;
-			padding: 9px 8px 9px 5px;
-			cursor: pointer;
-			border: 2px solid transparent;
-			border-radius: 20px;
-			transition: background-color 100ms ease-in-out, border-color 100ms ease-in-out;
-
-			&:hover, &.open {
-				border-color: #FFF;
-			}
-
-			&.open {
-				background: #FFF;
-
-				> .circle {
-					background: #5D9BE4;
-				}
-			}
-
-			> .circle {
-				width: 5px;
-				height: 5px;
-				border-radius: 100%;
-				background: #FFF;
-				margin-left: 3px;
-			}
-		}
-	}
-
-	> .card-contents > .account-balances > .spinner-container {
-		display: flex;
-		margin: 25px 12px 20px 17px;
-
-		.uk-spinner {
-			color: #FFF;
-		}
-	}
-
-	> .card-contents > .account-balances > .balance-container {
-		display: flex;
-		align-items: flex-end;
-		margin: 0 12px 20px 17px;
-		line-height: 1;
-
-		&.primary {
-			margin-bottom: 12px;
-			color: #FFF;
-
-			> .currency-name {
-				font-size: 18px;
-				margin-bottom: -1px;
-				@media (min-width: 1500px) {
-					font-size: 22px;
-					margin-bottom: 0;
-				}
-			}
-
-			> .amount-container {
-				> .amount-integer {
-					font-weight: 700;
-
-					font-size: 26px;
-					margin-bottom: -2px;
-					@media (min-width: 1500px) {
-						font-size: 32px;
-						margin-bottom: -1px;
-					}
-				}
-
-				> .amount-fractional {
-					font-size: 16px;
-					@media (min-width: 1500px) {
-						font-size: 21px;
-					}
-				}
-			}
-		}
-
-		&.converted {
-			color: #DEEDFF;
-
-			> .currency-name {
-				font-size: 12px;
-				margin-bottom: 0;
-				@media (min-width: 1500px) {
-					font-size: 12px;
-					margin-bottom: 1px;
-				}
-
-				> .estimate-symbol {
-					margin-right: 2px;
-				}
-			}
-
-			> .amount-container {
-				> .amount-integer {
-					margin-right: 1px;
-					margin-bottom: -1px;
-
-					font-size: 16px;
-					@media (min-width: 1500px) {
-						font-size: 18px;
-					}
-				}
-
-				> .amount-fractional {
-					font-size: 15px;
-
-					font-size: 12px;
-					@media (min-width: 1500px) {
-						font-size: 15px;
-					}
-				}
-			}
-		}
-
-		> .currency-name {
-			width: 55px;
-			@media (min-width: 1500px) {
-				width: 70px;
-			}
-
-			margin-right: 15px;
-			font-weight: 300;
-			text-align: right;
-		}
-
-		> .amount-container {
-			display: flex;
-			align-items: flex-end;
-			overflow: hidden;
-
-			> .amount-fractional {
-				.truncated-text();
-			}
-
-			> .amount-updating {
-				padding-bottom: 5px;
-				margin-left: 12px;
-			}
-		}
-	}
 }
 
 .account-item-apply-colors() {
@@ -415,6 +175,7 @@
 		justify-content: space-between;
 		background: @nav-tooltip-color-background;
 		border-bottom: 1px solid #1C1F28;
+		min-height: 32px;
 		padding: 8px 8px 6px 8px;
 		cursor: pointer;
 		transition: background-color 100ms ease-in-out;
@@ -460,7 +221,10 @@
 		}
 
 		> .balance-column {
-			text-align: right;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			justify-content: center;
 			margin-left: 20px;
 
 			> .balance {
@@ -554,7 +318,7 @@
 
 	> .representative > .representative-name-row {
 		display: flex;
-		align-items: flex-end;
+		align-items: center;
 		margin-bottom: 8px;
 
 		> .name {
@@ -766,7 +530,7 @@
 	}
 }
 
-.nav-btco-card + .nav-status-row {
+.btco-card + .nav-status-row {
 	margin-top: -10px;
 }
 
@@ -972,7 +736,7 @@
 		}
 	}
 
-	.support-nault {
+	.support-btconault {
 		display: flex;
 		flex-direction: column;
 		align-items: center;

@@ -15,6 +15,7 @@ import {
   WalletService,
   NinjaService
 } from '../../services';
+import { TranslocoService } from '@ngneat/transloco';
 
 @Component({
   selector: 'app-representatives',
@@ -56,12 +57,13 @@ export class RepresentativesComponent implements OnInit {
     public walletService: WalletService,
     private api: ApiService,
     private notifications: NotificationService,
-    private btcoBlock: NanoBlockService,
+    private nanoBlock: NanoBlockService,
     private util: UtilService,
     private representativeService: RepresentativeService,
     public settings: AppSettingsService,
     private ninja: NinjaService,
-    private qrModalService: QrModalService) { }
+    private qrModalService: QrModalService,
+    private translocoService: TranslocoService) { }
 
   async ngOnInit() {
     this.representativeService.loadRepresentativeList();
@@ -131,10 +133,10 @@ export class RepresentativesComponent implements OnInit {
     const walletAccount = this.walletService.wallet.accounts.find(a => a.id === account.id);
 
     if (walletAccount == null) {
-      return 'Account';
+      return this.translocoService.translate('general.account');
     }
 
-    return ('Account #' + walletAccount.index);
+    return (this.translocoService.translate('general.account') + '#' + walletAccount.index);
   }
 
   addSelectedAccounts(accounts) {
@@ -229,11 +231,11 @@ export class RepresentativesComponent implements OnInit {
       const totalSupply = new BigNumber(133248289);
 
       const reps = scores.map(rep => {
-        const btcoWeight = this.util.btco.rawToMBtco(rep.votingweight.toString() || 0);
-        const percent = btcoWeight.div(totalSupply).times(100);
+        const nanoWeight = this.util.btco.rawToMBtco(rep.votingweight.toString() || 0);
+        const percent = nanoWeight.div(totalSupply).times(100);
 
-        // rep.weight = btcoWeight.toString(10);
-        rep.weight = this.util.btco.mbtcoToRaw(btcoWeight);
+        // rep.weight = nanoWeight.toString(10);
+        rep.weight = this.util.btco.mbtcoToRaw(nanoWeight);
         rep.percent = percent.toFixed(3);
 
         return rep;
@@ -330,7 +332,7 @@ export class RepresentativesComponent implements OnInit {
       }
 
       try {
-        const changed = await this.btcoBlock.generateChange(walletAccount, newRep, this.walletService.isLedgerWallet());
+        const changed = await this.nanoBlock.generateChange(walletAccount, newRep, this.walletService.isLedgerWallet());
         if (!changed) {
           this.notifications.sendError(`Error changing representative for ${account.id}, please try again`);
         }

@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 import * as url from 'url';
+import { TranslocoService, getBrowserCultureLang, getBrowserLang } from '@ngneat/transloco';
 
 export type WalletStore = 'localStorage'|'none';
 export type PoWSource = 'server'|'clientCPU'|'clientWebGL'|'best'|'custom';
 export type LedgerConnectionType = 'usb'|'bluetooth';
 
 interface AppSettings {
+  language: string;
   displayDenomination: string;
   // displayPrefix: string | null;
   walletStore: string;
@@ -25,13 +27,15 @@ interface AppSettings {
   minimumReceive: string | null;
   walletVersion: number | null;
   lightModeEnabled: boolean;
+  identiconsStyle: string;
 }
 
 @Injectable()
 export class AppSettingsService {
-  storeKey = `btcovault-appsettings`;
+  storeKey = `nanovault-appsettings`;
 
   settings: AppSettings = {
+    language: null,
     displayDenomination: 'mbtco',
     // displayPrefix: 'xrb',
     walletStore: 'localStorage',
@@ -44,13 +48,14 @@ export class AppSettingsService {
     multiplierSource: 1,
     customWorkServer: '',
     pendingOption: 'amount',
-    serverName: 'btco',
+    serverName: 'random',
     serverAPI: null,
     serverWS: null,
     serverAuth: null,
-    minimumReceive: null,
+    minimumReceive: '0.000001',
     walletVersion: 1,
-    lightModeEnabled: false
+    lightModeEnabled: false,
+    identiconsStyle: 'nanoidenticons',
   };
 
   serverOptions = [
@@ -65,16 +70,16 @@ export class AppSettingsService {
     {
       name: 'Bitcoin Nano',
       value: 'btco',
-      api: 'http://peering.bitcoinnano.org:7072',
-      ws: 'wss://peering.bitcoinnano.org:7074',
+      api: 'http://api.bitcoinnano.org:7076',
+      ws: 'ws://ws.bitcoinnano.org:7078',
       auth: null,
       shouldRandom: true,
     },
     {
       name: 'Nanos.cc',
-      value: 'btcos',
-      api: 'https://nault.btcos.cc/proxy',
-      ws: 'wss://nault-ws.btcos.cc',
+      value: 'nanos',
+      api: 'https://btconault.nanos.cc/proxy',
+      ws: 'wss://btconault-ws.nanos.cc',
       auth: null,
       shouldRandom: true,
     },
@@ -104,8 +109,8 @@ export class AppSettingsService {
     },
     {
       name: 'NanoCrawler',
-      value: 'btcocrawler',
-      api: 'https://vault.btcocrawler.cc/api/node-api',
+      value: 'nanocrawler',
+      api: 'https://vault.nanocrawler.cc/api/node-api',
       ws: null,
       auth: null,
       shouldRandom: false,
@@ -134,11 +139,13 @@ export class AppSettingsService {
     acc.push( server.api.replace(/https?:\/\//g, '') );
     return acc;
   }, [
-    'proxy.btcos.cc/proxy',
-    'node.somebtco.com'
+    'proxy.nanos.cc/proxy',
+    'node.somenano.com'
   ]);
 
-  constructor() { }
+  constructor(
+    private translate: TranslocoService
+  ) { }
 
   loadAppSettings() {
     let settings: AppSettings = this.settings;
@@ -147,6 +154,23 @@ export class AppSettingsService {
       settings = JSON.parse(settingsStore);
     }
     this.settings = Object.assign(this.settings, settings);
+
+    if (this.settings.language === null) {
+      const browserCultureLang = getBrowserCultureLang();
+      const browserLang = getBrowserLang();
+
+      if (this.translate.getAvailableLangs().some(lang => lang['id'] === browserCultureLang)) {
+        this.settings.language = browserCultureLang;
+      } else if (this.translate.getAvailableLangs().some(lang => lang['id'] === browserCultureLang)) {
+        this.settings.language = browserLang;
+      } else {
+        this.settings.language = this.translate.getDefaultLang();
+      }
+
+      console.log('No language configured, setting to: ' + this.settings.language);
+      console.log('Browser culture language: ' + browserCultureLang);
+      console.log('Browser language: ' + browserLang);
+    }
 
     this.loadServerSettings();
 
@@ -204,6 +228,7 @@ export class AppSettingsService {
   clearAppSettings() {
     localStorage.removeItem(this.storeKey);
     this.settings = {
+      language: 'en',
       displayDenomination: 'mbtco',
       // displayPrefix: 'xrb',
       walletStore: 'localStorage',
@@ -220,13 +245,14 @@ export class AppSettingsService {
       serverAPI: null,
       serverWS: null,
       serverAuth: null,
-      minimumReceive: null,
+      minimumReceive: '0.000001',
       walletVersion: 1,
       lightModeEnabled: false,
+      identiconsStyle: 'nanoidenticons',
     };
   }
 
-  // Get the base URL part of the serverAPI, e.g. https://btcovault.io from https://btcovault.io/api/node-api.
+  // Get the base URL part of the serverAPI, e.g. https://nanovault.io from https://nanovault.io/api/node-api.
   getServerApiBaseUrl(): string {
     const u = url.parse(this.settings.serverAPI);
     u.pathname = '/';

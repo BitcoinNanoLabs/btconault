@@ -5,7 +5,7 @@ import {UtilService} from './util.service';
 
 @Injectable()
 export class WorkPoolService {
-  storeKey = `btcovault-workcache`;
+  storeKey = `nanovault-workcache`;
 
   cacheLength = 25;
   workCache = [];

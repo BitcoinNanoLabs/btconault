@@ -1,5 +1,14 @@
+.account-type-label.editing-name {
+    margin-bottom: 6px;
+}
+
 .btco-address-actions {
     margin-top: 2px;
+}
+
+.icon-unconfirmed {
+    margin-left: 2px;
+    vertical-align: 2px;
 }
 
 .icon-qr-code {
@@ -53,10 +62,6 @@
     margin-left: 10px;
     position: relative;
     bottom: 3px;
-}
-
-.refresh-disabled {
-    color: #bbb;
 }
 
 .incoming-label {
@@ -196,9 +201,20 @@
     margin-bottom: 4px;
 }
 
+.advanced-option + .advanced-option {
+    margin-top: 16px;
+}
+
 .advanced-option .uk-checkbox {
     margin-left: 12px;
     margin-top: -1px;
+}
+
+.more-results > a {
+    display: block;
+}
+.more-results > a > .chevron {
+    margin: 0 40px -4px 40px;
 }
 
 .form-input-destination {
@@ -207,6 +223,12 @@
 
 .form-amount {
     max-width: 450px;
+}
+
+@media (max-width: 939px) {
+    .add-whitespace-underneath {
+        padding-bottom: 100px;
+    }
 }
 
 .uk-modal-body .qr-code-placeholder {

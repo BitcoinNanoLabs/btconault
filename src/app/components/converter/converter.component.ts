@@ -12,7 +12,7 @@ import {NotificationService} from '../../services/notification.service';
   styleUrls: ['./converter.component.less']
 })
 export class ConverterComponent implements OnInit, OnDestroy {
-  MBtco = '1';
+  Mbtco = '1';
   raw = '';
   invalidMBtco = false;
   invalidRaw = false;
@@ -29,10 +29,10 @@ export class ConverterComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     BigNumber.config({ DECIMAL_PLACES: 30 });
-    this.MBtco = '1';
+    this.Mbtco = '1';
 
     this.priceSub = this.price.lastPrice$.subscribe(event => {
-      this.fiatPrice = (new BigNumber(this.MBtco)).times(this.price.price.lastPrice).toString();
+      this.fiatPrice = (new BigNumber(this.Mbtco)).times(this.price.price.lastPrice).toString();
     });
 
     this.unitChange('mbtco');
@@ -47,9 +47,9 @@ export class ConverterComponent implements OnInit, OnDestroy {
   unitChange(unit) {
     switch (unit) {
       case 'mbtco':
-        if (this.util.account.isValidNanoAmount(this.MBtco)) {
-          this.raw = btcocurrency.convert(this.MBtco, {from: btcocurrency.Unit.BTCO, to: btcocurrency.Unit.raw});
-          this.fiatPrice = (new BigNumber(this.MBtco)).times(this.price.price.lastPrice).toString(10);
+        if (this.util.account.isValidNanoAmount(this.Mbtco)) {
+          this.raw = btcocurrency.convert(this.Mbtco, {from: btcocurrency.Unit.BTCO, to: btcocurrency.Unit.raw});
+          this.fiatPrice = (new BigNumber(this.Mbtco)).times(this.price.price.lastPrice).toString(10);
           this.invalidMBtco = false;
           this.invalidRaw = false;
           this.invalidFiat = false;
@@ -61,26 +61,26 @@ export class ConverterComponent implements OnInit, OnDestroy {
         break;
       case 'raw':
         if (this.util.account.isValidAmount(this.raw)) {
-          this.MBtco = btcocurrency.convert(this.raw, {from: btcocurrency.Unit.raw, to: btcocurrency.Unit.BTCO});
-          this.fiatPrice = (new BigNumber(this.MBtco)).times(this.price.price.lastPrice).toString(10);
+          this.Mbtco = btcocurrency.convert(this.raw, {from: btcocurrency.Unit.raw, to: btcocurrency.Unit.BTCO});
+          this.fiatPrice = (new BigNumber(this.Mbtco)).times(this.price.price.lastPrice).toString(10);
           this.invalidRaw = false;
           this.invalidMBtco = false;
           this.invalidFiat = false;
         } else {
-          this.MBtco = '';
+          this.Mbtco = '';
           this.fiatPrice = '';
           this.invalidRaw = true;
         }
         break;
       case 'fiat':
         if (this.util.string.isNumeric(this.fiatPrice)) {
-          this.MBtco = (new BigNumber(this.fiatPrice)).dividedBy(this.price.price.lastPrice).toString(10);
-          this.raw = btcocurrency.convert(this.MBtco, {from: btcocurrency.Unit.BTCO, to: btcocurrency.Unit.raw});
+          this.Mbtco = (new BigNumber(this.fiatPrice)).dividedBy(this.price.price.lastPrice).toString(10);
+          this.raw = btcocurrency.convert(this.Mbtco, {from: btcocurrency.Unit.BTCO, to: btcocurrency.Unit.raw});
           this.invalidRaw = false;
           this.invalidMBtco = false;
           this.invalidFiat = false;
         } else {
-          this.MBtco = '';
+          this.Mbtco = '';
           this.raw = '';
           this.invalidFiat = true;
         }

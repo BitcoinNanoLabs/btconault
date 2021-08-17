@@ -14,6 +14,7 @@ export interface RepresentativeStatus {
   lowUptime: boolean;
   closing: boolean;
   markedToAvoid: boolean;
+  markedAsNF: boolean;
   trusted: boolean;
   changeRequired: boolean;
   warn: boolean;
@@ -55,7 +56,7 @@ export interface FullRepresentativeOverview extends RepresentativeApiOverview {
 
 @Injectable()
 export class RepresentativeService {
-  storeKey = `btcovault-representatives`;
+  storeKey = `nanovault-representatives`;
 
   representatives$ = new BehaviorSubject([]);
   representatives = [];
@@ -134,8 +135,8 @@ export class RepresentativeService {
       const knownRep = this.getRepresentative(representative.account);
       const knownRepNinja = await this.ninja.getAccount(representative.account);
 
-      const btcoWeight = this.util.btco.rawToMBtco(representative.weight || 0);
-      const percent = this.onlineStakeTotal ? btcoWeight.div(this.onlineStakeTotal).times(100) : new BigNumber(0);
+      const nanoWeight = this.util.btco.rawToMBtco(representative.weight || 0);
+      const percent = this.onlineStakeTotal ? nanoWeight.div(this.onlineStakeTotal).times(100) : new BigNumber(0);
 
       const repStatus: RepresentativeStatus = {
         online: repOnline,
@@ -145,6 +146,7 @@ export class RepresentativeService {
         lowUptime: false,
         closing: false,
         markedToAvoid: false,
+        markedAsNF: false,
         trusted: false,
         daysSinceLastVoted: 0,
         changeRequired: false,
@@ -167,6 +169,15 @@ export class RepresentativeService {
         repStatus.highWeight = true;
       }
 
+      // Check hardcoded NF reps (override below if trusted but leave markedAsNF intact)
+      const nf = this.nfReps.find(bad => bad.id === representative.account);
+      if (nf) {
+        repStatus.markedAsNF = true;
+        repStatus.changeRequired = true;
+        repStatus.warn = true;
+        status = 'alert';
+      }
+
       if (knownRep) {
         // in the list of known representatives
         status = status === 'none' ? 'ok' : status;
@@ -175,6 +186,8 @@ export class RepresentativeService {
         if (knownRep.trusted) {
           status = 'trusted'; // marked as trusted
           repStatus.trusted = true;
+          repStatus.changeRequired = false;
+          repStatus.warn = false;
         }
         if (knownRep.warn) {
           status = 'alert'; // marked to avoid
@@ -441,47 +454,42 @@ export class RepresentativeService {
 
   // Default representatives list
   // tslint:disable-next-line:member-ordering
-  defaultRepresentatives = [
-    {
-      id: 'btco_36u6rwcg9us6wwrgcdt7xyqz4wm4e9y48goahfup6zuqabhfrx5x7g1xdddi',
-      name: 'Bitcoin Nano Foundation #1',
-      warn: true,
-    },
-    {
-      id: 'btco_36qaepuktgazzkxtwwdngk3ihisxmchmnfpignhrp7xqe8nxebtcdkunytda',
-      name: 'Bitcoin Nano Foundation #2',
-      warn: true,
-    },
-    {
-      id: 'btco_3tu3fqfrcpqcwwrm8g6puzknft5uhxjezztfjracgo9jx4posik5szbn5waz',
-      name: 'Bitcoin Nano Foundation #3',
-      warn: true,
-    },
-    {
-      id: 'btco_1pprkm1z961ne88ocysdze9uq3o4ctfjtpinfgsjthuuqxgt37tbhpzfb9zi',
-      name: 'Bitcoin Nano Foundation #4',
-      warn: true,
-    },
-    {
-      id: 'btco_3jrokzqbee3kyugs3nbq85jpjood486iu8ub6gsinfbcwq49khchu8h9yfp9',
-      name: 'Bitcoin Nano Foundation #5',
-      warn: true,
-    },
-    {
-      id: 'btco_1awsn43we17c1oshdru4azeqjz9wii41dy8npubm4rg11so7dx3jtqgoeahy',
-      name: 'Nano Foundation #6',
-      warn: true,
-    },
-    {
-      id: 'btco_1anrzcuwe64rwxzcco8dkhpyxpi8kd7zsjc1oeimpc3ppca4mrjtwnqposrs',
-      name: 'Nano Foundation #7',
-      warn: true,
-    },
-    {
-      id: 'btco_1hza3f7wiiqa7ig3jczyxj5yo86yegcmqk3criaz838j91sxcckpfhbhhra1',
-      name: 'Nano Foundation #8',
-      warn: true,
-    },
+  defaultRepresentatives = [{
+    id: 'btco_36u6rwcg9us6wwrgcdt7xyqz4wm4e9y48goahfup6zuqabhfrx5x7g1xdddi',
+    name: 'Bitcoin Nano Foundation #1',
+    trusted: true,
+  },
+  {
+    id: 'btco_36qaepuktgazzkxtwwdngk3ihisxmchmnfpignhrp7xqe8nxebtcdkunytda',
+    name: 'Bitcoin Nano Foundation #2',
+    trusted: true,
+  },
+  {
+    id: 'btco_3tu3fqfrcpqcwwrm8g6puzknft5uhxjezztfjracgo9jx4posik5szbn5waz',
+    name: 'Bitcoin Nano Foundation #3',
+    trusted: true,
+  },
+  {
+    id: 'btco_1pprkm1z961ne88ocysdze9uq3o4ctfjtpinfgsjthuuqxgt37tbhpzfb9zi',
+    name: 'Bitcoin Nano Foundation #4',
+    trusted: true,
+  },
+  {
+    id: 'btco_3jrokzqbee3kyugs3nbq85jpjood486iu8ub6gsinfbcwq49khchu8h9yfp9',
+    name: 'Bitcoin Nano Foundation #5',
+    trusted: true,
+  },
+  {
+    id: 'btco_1uq86kuyewewkfd64m6jfsyeqntpxsf5ok9a4ijfzcj8nkn35zrpphuzuy1f',
+    name: 'Bitcoin Nano Foundation #6',
+    trusted: true,
+  },
+  ];
+
+  // Bad representatives hardcoded to be avoided. Not visible in the user rep list
+  // tslint:disable-next-line:member-ordering
+  nfReps = [
+
   ];
 
 }

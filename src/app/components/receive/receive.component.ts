@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import {ChildActivationEnd, Router} from '@angular/router';
 import {WalletService, WalletAccount} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {AddressBookService} from '../../services/address-book.service';
@@ -12,6 +13,7 @@ import {PriceService} from '../../services/price.service';
 import {WebsocketService} from '../../services/websocket.service';
 import * as QRCode from 'qrcode';
 import BigNumber from 'bignumber.js';
+import { TranslocoService } from '@ngneat/transloco';
 
 @Component({
   selector: 'app-receive',
@@ -21,16 +23,22 @@ import BigNumber from 'bignumber.js';
 
 
 
-export class ReceiveComponent implements OnInit {
+export class ReceiveComponent implements OnInit, OnDestroy {
   btco = 1000000000000000000000000;
   accounts = this.walletService.wallet.accounts;
 
+  timeoutIdClearingRecentlyCopiedState: any = null;
+  mobileTransactionMenuModal: any = null;
+  mobileTransactionData: any = null;
+
+  selectedAccountAddressBookName = '';
   pendingAccountModel = '0';
   pendingBlocks = [];
   pendingBlocksForSelectedAccount = [];
   qrCodeImage = null;
   qrAccount = '';
   qrAmount: BigNumber = null;
+  recentlyCopiedAccountAddress = false;
   walletAccount: WalletAccount = null;
   selAccountInit = false;
   loadingIncomingTxList = false;
@@ -40,7 +48,10 @@ export class ReceiveComponent implements OnInit {
   validFiat = true;
   qrSuccessClass = '';
 
+  routerSub = null;
+
   constructor(
+    private route: Router,
     private walletService: WalletService,
     private notificationService: NotificationService,
     private addressBook: AddressBookService,
@@ -48,18 +59,28 @@ export class ReceiveComponent implements OnInit {
     private api: ApiService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
-    private btcoBlock: NanoBlockService,
+    private nanoBlock: NanoBlockService,
     public price: PriceService,
     private websocket: WebsocketService,
-    private util: UtilService) { }
+    private util: UtilService,
+    private translocoService: TranslocoService) { }
 
   async ngOnInit() {
+    const UIkit = window['UIkit'];
+    const mobileTransactionMenuModal = UIkit.modal('#mobile-transaction-menu-modal');
+    this.mobileTransactionMenuModal = mobileTransactionMenuModal;
+
+    this.routerSub = this.route.events.subscribe(event => {
+      if (event instanceof ChildActivationEnd) {
+        this.mobileTransactionMenuModal.hide();
+      }
+    });
+
     // Update selected account if changed in the sidebar
     this.walletService.wallet.selectedAccount$.subscribe(async acc => {
       if (this.selAccountInit) {
         this.pendingAccountModel = acc ? acc.id : '0';
-        this.filterPendingBlocksForDestinationAccount(this.pendingAccountModel);
-        this.changeQRAccount(this.pendingAccountModel);
+        this.onSelectedAccountChange(this.pendingAccountModel);
       }
       this.selAccountInit = true;
     });
@@ -73,8 +94,7 @@ export class ReceiveComponent implements OnInit {
     // Set the account selected in the sidebar as default
     if (this.walletService.wallet.selectedAccount !== null) {
       this.pendingAccountModel = this.walletService.wallet.selectedAccount.id;
-      this.filterPendingBlocksForDestinationAccount(this.pendingAccountModel);
-      this.changeQRAccount(this.pendingAccountModel);
+      this.onSelectedAccountChange(this.pendingAccountModel);
     }
 
     // Listen as new transactions come in. Ignore the latest transaction that is already present on page load.
@@ -90,24 +110,42 @@ export class ReceiveComponent implements OnInit {
     });
   }
 
+  ngOnDestroy() {
+    this.mobileTransactionMenuModal.hide();
+    if (this.routerSub) {
+      this.routerSub.unsubscribe();
+    }
+  }
+
   async updatePendingBlocks() {
-    this.pendingBlocks = this.walletService.wallet.pendingBlocks.map(
-      (pendingBlock) =>
-        Object.assign(
-          {},
-          pendingBlock,
-          {
-            sourceAddressBookName: (
-                this.addressBook.getAccountName(pendingBlock.source)
-              || this.getAccountLabel(pendingBlock.source, null)
-            ),
-            accountAddressBookName: (
-                this.addressBook.getAccountName(pendingBlock.account)
-              || this.getAccountLabel(pendingBlock.account, 'Account')
-            ),
-          }
+    this.pendingBlocks =
+      this.walletService.wallet.pendingBlocks
+        .map(
+          (pendingBlock) =>
+            Object.assign(
+              {},
+              pendingBlock,
+              {
+                account: pendingBlock.source,
+                destination: pendingBlock.account,
+                source: null,
+                addressBookName: (
+                    this.addressBook.getAccountName(pendingBlock.source)
+                  || this.getAccountLabel(pendingBlock.source, null)
+                ),
+                destinationAddressBookName: (
+                    this.addressBook.getAccountName(pendingBlock.account)
+                  || this.getAccountLabel(pendingBlock.account, 'Account')
+                ),
+                isReceivable: true,
+                local_time_string: '',
+              }
+            )
         )
-    );
+        .sort(
+          (a, b) =>
+            a.destinationAddressBookName.localeCompare(b.destinationAddressBookName)
+        );
 
     this.filterPendingBlocksForDestinationAccount(this.pendingAccountModel);
   }
@@ -121,7 +159,14 @@ export class ReceiveComponent implements OnInit {
 
     // Blocks for selected account
     this.pendingBlocksForSelectedAccount =
-      this.pendingBlocks.filter(block => (block.account === selectedAccountID));
+      this.pendingBlocks.filter(block => (block.destination === selectedAccountID));
+  }
+
+  showMobileMenuForTransaction(transaction) {
+    this.notificationService.removeNotification('success-copied');
+
+    this.mobileTransactionData = transaction;
+    this.mobileTransactionMenuModal.show();
   }
 
   getAccountLabel(accountID, defaultLabel) {
@@ -131,7 +176,7 @@ export class ReceiveComponent implements OnInit {
       return defaultLabel;
     }
 
-    return ('Account #' + walletAccount.index);
+    return (this.translocoService.translate('general.account') + '#' + walletAccount.index);
   }
 
   async getPending() {
@@ -143,7 +188,7 @@ export class ReceiveComponent implements OnInit {
     this.loadingIncomingTxList = false;
   }
 
-  async btcoAmountChange() {
+  async nanoAmountChange() {
     if (!this.validateNanoAmount() || Number(this.amountNano) === 0) {
       this.amountFiat = '';
       this.changeQRAmount();
@@ -170,11 +215,11 @@ export class ReceiveComponent implements OnInit {
       return;
     }
     const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const btcoVal = this.util.btco.rawToNano(rawAmount).floor();
-    const rawRounded = this.util.btco.btcoToRaw(btcoVal);
-    const btcoAmount = this.util.btco.rawToMBtco(rawRounded);
+    const nanoVal = this.util.btco.rawToNano(rawAmount).floor();
+    const rawRounded = this.util.btco.btcoToRaw(nanoVal);
+    const nanoAmount = this.util.btco.rawToMBtco(rawRounded);
 
-    this.amountNano = btcoAmount.toFixed();
+    this.amountNano = nanoAmount.toFixed();
     this.changeQRAmount(rawRounded.toFixed());
     this.validateNanoAmount();
   }
@@ -197,9 +242,14 @@ export class ReceiveComponent implements OnInit {
     return this.validFiat;
   }
 
-  onSelectedAccountChange(account) {
-    this.changeQRAccount(account);
-    this.filterPendingBlocksForDestinationAccount(account);
+  onSelectedAccountChange(accountID) {
+    this.selectedAccountAddressBookName = (
+        this.addressBook.getAccountName(accountID)
+      || this.getAccountLabel(accountID, 'Account')
+    );
+
+    this.changeQRAccount(accountID);
+    this.filterPendingBlocksForDestinationAccount(accountID);
   }
 
   async changeQRAccount(account) {
@@ -208,6 +258,7 @@ export class ReceiveComponent implements OnInit {
     let qrCode = null;
     if (account.length > 1) {
       this.qrAccount = account;
+      this.qrCodeImage = null;
       qrCode = await QRCode.toDataURL(`btco:${account}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ''}`, {scale: 7});
     }
     this.qrCodeImage = qrCode;
@@ -222,6 +273,7 @@ export class ReceiveComponent implements OnInit {
       }
     }
     if (this.qrAccount.length > 1) {
+      this.qrCodeImage = null;
       qrCode = await QRCode.toDataURL(`btco:${this.qrAccount}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ''}`, {scale: 7});
       this.qrCodeImage = qrCode;
     }
@@ -239,41 +291,65 @@ export class ReceiveComponent implements OnInit {
     this.changeQRAmount();
   }
 
-  async receivePending(pendingBlock) {
-    const sourceBlock = pendingBlock.hash;
+  onReceiveFundsPress(receivableTransaction) {
+    if (receivableTransaction.loading || receivableTransaction.received) {
+      return;
+    }
 
-    const walletAccount = this.walletService.wallet.accounts.find(a => a.id === pendingBlock.account);
+    this.receiveReceivableBlock(receivableTransaction);
+  }
+
+  async receiveReceivableBlock(receivableBlock) {
+    const sourceBlock = receivableBlock.hash;
+
+    const walletAccount = this.walletService.wallet.accounts.find(a => a.id === receivableBlock.destination);
     if (!walletAccount) {
-      throw new Error(`unable to find receiving account in wallet`);
+      throw new Error(`Unable to find receiving account in wallet`);
     }
 
     if (this.walletService.walletIsLocked()) {
       return this.notificationService.sendWarning(`Wallet must be unlocked`);
     }
-    pendingBlock.loading = true;
+    receivableBlock.loading = true;
 
-    const newBlock = await this.btcoBlock.generateReceive(walletAccount, sourceBlock, this.walletService.isLedgerWallet());
+    const createdReceiveBlockHash =
+      await this.nanoBlock.generateReceive(walletAccount, sourceBlock, this.walletService.isLedgerWallet());
 
-    if (newBlock) {
-      pendingBlock.received = true;
+    if (createdReceiveBlockHash) {
+      receivableBlock.received = true;
+      this.mobileTransactionMenuModal.hide();
       this.notificationService.removeNotification('success-receive');
       this.notificationService.sendSuccess(`Successfully received Nano!`, { identifier: 'success-receive' });
-      // clear the list of pending blocks. Updated again with reloadBalances()
-      this.walletService.clearPendingBlocks();
+      // pending has been processed, can be removed from the list
+      // list also updated with reloadBalances but not if called too fast
+      this.walletService.removePendingBlock(receivableBlock.hash);
     } else {
       if (!this.walletService.isLedgerWallet()) {
         this.notificationService.sendError(`There was a problem receiving the transaction, try manually!`, {length: 10000});
       }
     }
 
-    pendingBlock.loading = false;
-
+    receivableBlock.loading = false;
     await this.walletService.reloadBalances();
+    this.updatePendingBlocks(); // update the list
   }
 
   copied() {
     this.notificationService.removeNotification('success-copied');
     this.notificationService.sendSuccess(`Successfully copied to clipboard!`, { identifier: 'success-copied' });
+  }
+
+  copiedAccountAddress() {
+    if (this.timeoutIdClearingRecentlyCopiedState != null) {
+      clearTimeout(this.timeoutIdClearingRecentlyCopiedState);
+    }
+    this.recentlyCopiedAccountAddress = true;
+    this.timeoutIdClearingRecentlyCopiedState = setTimeout(
+      () => {
+        this.recentlyCopiedAccountAddress = false;
+      },
+      2000
+    );
   }
 
   toBigNumber(value) {

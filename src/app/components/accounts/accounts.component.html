@@ -23,14 +23,15 @@
     </div>
 
     <div class="uk-card uk-overflow-hidden">
-      <table class="uk-table uk-table-striped uk-table-small">
+      <table class="accounts-list uk-table uk-table-striped uk-table-small">
         <thead>
         <tr>
-          <th scope="col" class="uk-width-3-5@m uk-width-1-2">
+          <th scope="col" class="account-column uk-width-3-5@m uk-width-1-2" [class.identicons-enabled]="(settings.settings.identiconsStyle !== 'none')">
             Account
           </th>
-          <th scope="col" class="uk-width-1-5@m uk-width-1-4 uk-text-right">Balance</th>
+          <th scope="col" class="account-amounts-column uk-width-1-5@m uk-width-1-4 uk-text-right">Balance</th>
           <th scope="col" [class]="{
+            'account-actions-column': true,
             'table-header-delete-account': true,
             'uk-width-1-5@m': true,
             'uk-width-1-4': true,
@@ -41,23 +42,65 @@
         </thead>
         <tbody>
         <tr *ngFor="let account of accounts" class="uk-visible-toggle">
-          <td class="uk-visible-toggle uk-text-truncate">
-            <div uk-grid>
-              <a [routerLink]="'/account/' + account.id" [class]="[ 'uk-width-auto', 'uk-text-truncate', 'account-container', !isLedgerWallet ? 'narrow' : 'wide' ]">
-                <div class="uk-width-1-1">
-                  <div class="account-index" *ngIf="viewAdvanced"><span>#</span>{{ account.index }}</div>
-                  <div class="account-label">{{
-                      account.addressBookName
-                    ? account.addressBookName
-                    : (
-                        viewAdvanced
-                      ? 'Account'
-                      : 'Account #' + account.index
-                    )
-                  }}</div>
+          <ng-template #accountAmounts>
+            <ng-container *ngIf="(walletService.wallet.updatingBalance === false) else balanceLoading">
+              <div class="account-amounts-primary uk-width-1-1">
+                <div *ngIf="account.pending.gt(0)" class="incoming-label">
+                  <div class="text-snippet">New</div>
+                  <div class="text-full">+{{ account.pending | rai: 'mbtco,true' | amountsplit: 0 }}{{ account.pending | rai: 'mbtco,true' | amountsplit: 1 }} BTCO</div>
                 </div>
-                <div class="btco-address-clickable btco-address-monospace uk-text-truncate">
-                  <app-btco-account-id [accountID]="account.id" middle="auto"></app-btco-account-id>
+                <span class="amounts" [title]="( account.balanceRaw.gt(0) ? ( '+' + ( account.balanceRaw.toString(10) ) + ' raw' ) : '' )">
+                  <span class="amount-integer">{{ account.balance | rai: 'mbtco,true' | amountsplit: 0 }}</span>
+                  <span class="amount-fractional">{{ account.balance | rai: 'mbtco,true' | amountsplit: 1 }}</span>
+                  <span class="currency-name">BTCO</span>
+                </span>
+              </div>
+              <div class="account-amounts-converted uk-width-1-1 text-half-muted">
+                {{ account.balanceFiat | fiat: settings.settings.displayCurrency }}
+              </div>
+            </ng-container>
+            <ng-template #balanceLoading>
+              <div class="account-amounts-primary uk-width-1-1">
+                <div uk-spinner="ratio: 0.5;"></div>
+              </div>
+            </ng-template>
+          </ng-template>
+          <ng-template #accountActions>
+            <!-- Icon for regular view -->
+            <a (click)="deleteAccount(account)" class="icon-delete-account uk-text-danger" title="Hide Account" uk-tooltip><span uk-icon="icon: close;"></span></a>
+            <!-- Button for compact view -->
+            <button
+              (click)="deleteAccount(account)"
+              class="button-delete-account uk-button uk-button-secondary uk-text-danger uk-text-center uk-width-auto nlt-icon-button"
+              type="button"
+            ><span class="nlt-icon" uk-icon="icon: close;" style="vertical-align: 1px;"></span>HIDE ACCOUNT</button>
+          </ng-template>
+          <td class="account-column uk-visible-toggle uk-text-truncate" [class.identicons-enabled]="(settings.settings.identiconsStyle !== 'none')">
+            <div uk-grid>
+              <a
+                (click)="navigateToAccount(account); $event.stopPropagation()"
+                [routerLink]="( '/account/' + account.id )" [queryParams]="{ compact: '1' }"
+                [class]="[ 'uk-width-auto', 'uk-text-truncate', 'account-container', !isLedgerWallet ? 'narrow' : 'wide' ]"
+              >
+                <div class="uk-flex">
+                  <app-btco-identicon scale="12" [accountID]="account.id" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="btco-identicon" *ngIf="(settings.settings.identiconsStyle !== 'none')"></app-btco-identicon>
+                  <div class="uk-width-expand">
+                    <div class="uk-width-1-1">
+                      <div class="account-index" *ngIf="viewAdvanced"><span>#</span>{{ account.index }}</div>
+                      <div class="account-label">{{
+                          account.addressBookName
+                        ? account.addressBookName
+                        : (
+                            viewAdvanced
+                          ? 'Account'
+                          : ('general.account' | transloco) + '#' + account.index
+                        )
+                      }}</div>
+                    </div>
+                    <div class="btco-address-clickable btco-address-monospace uk-text-truncate">
+                      <app-btco-account-id [accountID]="account.id" middle="auto"></app-btco-account-id>
+                    </div>
+                  </div>
                 </div>
               </a>
               <div class="btco-address-actions uk-width-auto copy-container">
@@ -67,29 +110,23 @@
                 </ul>
               </div>
             </div>
+            <div class="compact-account-amounts">
+              <ng-template [ngTemplateOutlet]="accountAmounts"></ng-template>
+            </div>
+            <div class="compact-account-actions" [class.hidden-section]="( isSingleKeyWallet || !viewAdvanced )">
+              <ng-template [ngTemplateOutlet]="accountActions"></ng-template>
+            </div>
           </td>
           <td class="account-amounts-column uk-text-right">
-            <div class="account-amounts-primary uk-width-1-1">
-              <div *ngIf="account.pending.gt(0)" class="incoming-label">
-                <div class="text-snippet">New</div>
-                <div class="text-full">+{{ account.pending | rai: 'mbtco,true' | amountsplit: 0 }}{{ account.pending | rai: 'mbtco,true' | amountsplit: 1 }} BTCO</div>
-              </div>
-              <span [title]="( account.balanceRaw.gt(0) ? ( '+' + ( account.balanceRaw.toString(10) | squeeze:'5,5' ) + ' raw' ) : '' )">
-                <span class="amount-integer">{{ account.balance | rai: 'mbtco,true' | amountsplit: 0 }}</span>
-                <span class="amount-fractional">{{ account.balance | rai: 'mbtco,true' | amountsplit: 1 }}</span>
-                <span class="currency-name">BTCO</span>
-              </span>
-            </div>
-            <div class="uk-width-1-1 text-half-muted">
-              {{ account.balanceFiat | fiat: settings.settings.displayCurrency }}
-            </div>
+            <ng-template [ngTemplateOutlet]="accountAmounts"></ng-template>
           </td>
           <td [class]="{
+            'account-actions-column': true,
             'uk-text-right': true,
             'hidden-column': ( isSingleKeyWallet || !viewAdvanced )
           }">
             <div class="uk-float-right">
-              <a (click)="deleteAccount(account)" class="icon-delete-account uk-text-danger" title="Hide Account" uk-tooltip><span uk-icon="icon: close;"></span></a>
+              <ng-template [ngTemplateOutlet]="accountActions"></ng-template>
             </div>
           </td>
         </tr>

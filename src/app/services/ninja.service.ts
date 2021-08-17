@@ -7,7 +7,7 @@ import { UtilService } from './util.service';
 export class NinjaService {
 
   // URL to Ninja API
-  ninjaUrl = 'https://mybtco.ninja/api/';
+  ninjaUrl = 'https://mynano.ninja/api/';
 
   // null - loading, false - offline, true - online
   status = null;
