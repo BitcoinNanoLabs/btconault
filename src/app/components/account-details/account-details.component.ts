@@ -98,7 +98,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   blockHash = null;
   blockHashReceive = null;
   remoteVisible = false;
-  blockTypes: string[] = ['Send Nano', 'Change Representative'];
+  blockTypes: string[] = ['Send Bitcoin Nano', 'Change Representative'];
   blockTypeSelected: string = this.blockTypes[0];
   representativeList = [];
   representativesOverview = [];
@@ -777,7 +777,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       receivableBlock.received = true;
       this.mobileTransactionMenuModal.hide();
       this.notifications.removeNotification('success-receive');
-      this.notifications.sendSuccess(`Successfully received Nano!`, { identifier: 'success-receive' });
+      this.notifications.sendSuccess(`Successfully received Bitcoin Nano!`, { identifier: 'success-receive' });
       // clear the list of pending blocks. Updated again with reloadBalances()
       this.wallet.clearPendingBlocks();
     } else {
