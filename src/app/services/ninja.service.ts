@@ -7,7 +7,7 @@ import { UtilService } from './util.service';
 export class NinjaService {
 
   // URL to Ninja API
-  ninjaUrl = 'https://ninja.bitcoinnano.org/api/';
+  ninjaUrl = 'http://207.244.255.183:7000/api/';
 
   // null - loading, false - offline, true - online
   status = null;

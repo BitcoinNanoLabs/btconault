@@ -7,7 +7,7 @@ import {AddressBookService} from './address-book.service';
 import * as CryptoJS from 'crypto-js';
 import {WorkPoolService} from './work-pool.service';
 import {WebsocketService} from './websocket.service';
-import {NanoBlockService} from './btco-block.service';
+import {BtcoBlockService} from './btco-block.service';
 import {NotificationService} from './notification.service';
 import {AppSettingsService} from './app-settings.service';
 import {PriceService} from './price.service';
@@ -123,7 +123,7 @@ export class WalletService {
     private price: PriceService,
     private workPool: WorkPoolService,
     private websocket: WebsocketService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: BtcoBlockService,
     private ledgerService: LedgerService,
     private notifications: NotificationService) {
     this.websocket.newTransactions$.subscribe(async (transaction) => {
@@ -995,7 +995,7 @@ export class WalletService {
       return; // Dispose of the block, no matching account
     }
 
-    const newHash = await this.nanoBlock.generateReceive(walletAccount, nextBlock.hash, this.isLedgerWallet());
+    const newHash = await this.btcoBlock.generateReceive(walletAccount, nextBlock.hash, this.isLedgerWallet());
     if (newHash) {
       if (this.successfulBlocks.length >= 15) this.successfulBlocks.shift();
       this.successfulBlocks.push(nextBlock.hash);

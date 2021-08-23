@@ -8,7 +8,7 @@ import {UtilService, StateBlock, TxType} from '../../services/util.service';
 import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {ActivatedRoute} from '@angular/router';
-import {NanoBlockService} from '../../services/btco-block.service';
+import {BtcoBlockService} from '../../services/btco-block.service';
 import {ApiService} from '../../services/api.service';
 import * as QRCode from 'qrcode';
 import * as bip39 from 'bip39';
@@ -81,7 +81,7 @@ export class SignComponent implements OnInit {
     private walletService: WalletService,
     private addressBookService: AddressBookService,
     private notificationService: NotificationService,
-    private btcoBlock: NanoBlockService,
+    private btcoBlock: BtcoBlockService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
     private api: ApiService,

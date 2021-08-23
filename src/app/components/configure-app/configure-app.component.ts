@@ -361,7 +361,7 @@ export class ConfigureAppComponent implements OnInit {
     const newMultiplier = this.selectedMultiplierOption;
     const pendingOption = this.selectedPendingOption;
     let minReceive = null;
-    if (this.util.account.isValidNanoAmount(this.minimumReceive)) {
+    if (this.util.account.isValidBtcoAmount(this.minimumReceive)) {
       minReceive = this.minimumReceive;
     }
 

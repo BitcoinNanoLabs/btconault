@@ -6,7 +6,7 @@ import {ApiService} from '../../services/api.service';
 import {UtilService, TxType} from '../../services/util.service';
 import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
-import {NanoBlockService} from '../../services/btco-block.service';
+import {BtcoBlockService} from '../../services/btco-block.service';
 import * as btcocurrency from 'btcocurrency';
 import { wallet } from 'btcocurrency-web';
 import * as bip39 from 'bip39';
@@ -66,7 +66,7 @@ export class SweeperComponent implements OnInit {
     private api: ApiService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: BtcoBlockService,
     private util: UtilService,
     private route: Router) {
       if (this.route.getCurrentNavigation().extras.state && this.route.getCurrentNavigation().extras.state.seed) {
@@ -219,7 +219,7 @@ export class SweeperComponent implements OnInit {
     // validate btco seed or private key
     if (key.length === 64) {
       if (btcocurrency.checkSeed(key)) {
-        return 'nano_seed';
+        return 'btco_seed';
       }
     }
     // validate bip39 seed
@@ -266,14 +266,14 @@ export class SweeperComponent implements OnInit {
       const data = await this.api.process(block.block, TxType.send);
       if (data.hash) {
         const blockInfo = await this.api.blockInfo(data.hash);
-        let nanoAmountSent = null;
+        let btcoAmountSent = null;
         if (blockInfo.amount) {
-          nanoAmountSent = this.util.btco.rawToMBtco(blockInfo.amount);
-          this.totalSwept = this.util.big.add(this.totalSwept, nanoAmountSent);
+          btcoAmountSent = this.util.btco.rawToMBtco(blockInfo.amount);
+          this.totalSwept = this.util.big.add(this.totalSwept, btcoAmountSent);
         }
         this.notificationService.sendInfo('Account ' + address + ' was swept and ' +
-        (nanoAmountSent ? (nanoAmountSent.toString(10) + ' Nano') : '') + ' transferred to ' + this.destinationAccount, {length: 15000});
-        this.appendLog('Funds transferred ' + (nanoAmountSent ? ('(' + nanoAmountSent.toString(10) + ' Nano)') : '') + ': ' + data.hash);
+        (btcoAmountSent ? (btcoAmountSent.toString(10) + ' Nano') : '') + ' transferred to ' + this.destinationAccount, {length: 15000});
+        this.appendLog('Funds transferred ' + (btcoAmountSent ? ('(' + btcoAmountSent.toString(10) + ' Nano)') : '') + ': ' + data.hash);
         console.log(this.adjustedBalance + ' raw transferred to ' + this.destinationAccount);
       } else {
         this.notificationService.sendWarning(`Failed processing block.`);
@@ -378,8 +378,8 @@ export class SweeperComponent implements OnInit {
       Object.keys(data.blocks).forEach(function(key) {
         raw = this.util.big.add(raw, data.blocks[key].amount);
       }.bind(this));
-      const nanoAmount = this.util.btco.rawToMBtco(raw);
-      const pending = {count: Object.keys(data.blocks).length, raw: raw, BTCO: nanoAmount, blocks: data.blocks};
+      const btcoAmount = this.util.btco.rawToMBtco(raw);
+      const pending = {count: Object.keys(data.blocks).length, raw: raw, BTCO: btcoAmount, blocks: data.blocks};
       const row = 'Found ' + pending.count + ' pending containing total ' + pending.BTCO + ' BTCO';
       this.appendLog(row);
 
@@ -416,7 +416,7 @@ export class SweeperComponent implements OnInit {
     let balance = 0; // balance will be 0 if open block
     this.adjustedBalance = balance.toString();
     let previous = null; // previous is null if we create open block
-    this.representative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
+    this.representative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
     let subType = 'open';
 
     // retrive from RPC
@@ -497,7 +497,7 @@ export class SweeperComponent implements OnInit {
       }
 
       // btco seed or private key
-      if (keyType === 'nano_seed' || seed !== '' || keyType === 'bip39_seed') {
+      if (keyType === 'btco_seed' || seed !== '' || keyType === 'bip39_seed') {
         // check if a private key first (no index)
         this.appendLog('Checking if input is a private key');
         if (seed === '') { // seed from input, no mnemonic

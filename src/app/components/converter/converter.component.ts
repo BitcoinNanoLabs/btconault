@@ -47,7 +47,7 @@ export class ConverterComponent implements OnInit, OnDestroy {
   unitChange(unit) {
     switch (unit) {
       case 'mbtco':
-        if (this.util.account.isValidNanoAmount(this.Mbtco)) {
+        if (this.util.account.isValidBtcoAmount(this.Mbtco)) {
           this.raw = btcocurrency.convert(this.Mbtco, {from: btcocurrency.Unit.BTCO, to: btcocurrency.Unit.raw});
           this.fiatPrice = (new BigNumber(this.Mbtco)).times(this.price.price.lastPrice).toString(10);
           this.invalidMBtco = false;

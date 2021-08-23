@@ -8,7 +8,7 @@ import {ApiService} from '../../services/api.service';
 import {UtilService} from '../../services/util.service';
 import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
-import {NanoBlockService} from '../../services/btco-block.service';
+import {BtcoBlockService} from '../../services/btco-block.service';
 import {PriceService} from '../../services/price.service';
 import {WebsocketService} from '../../services/websocket.service';
 import * as QRCode from 'qrcode';
@@ -59,7 +59,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
     private api: ApiService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: BtcoBlockService,
     public price: PriceService,
     private websocket: WebsocketService,
     private util: UtilService,
@@ -215,8 +215,8 @@ export class ReceiveComponent implements OnInit, OnDestroy {
       return;
     }
     const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const nanoVal = this.util.btco.rawToNano(rawAmount).floor();
-    const rawRounded = this.util.btco.btcoToRaw(nanoVal);
+    const btcoVal = this.util.btco.rawToBtco(rawAmount).floor();
+    const rawRounded = this.util.btco.btcoToRaw(btcoVal);
     const nanoAmount = this.util.btco.rawToMBtco(rawRounded);
 
     this.amountNano = nanoAmount.toFixed();
@@ -229,7 +229,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
       this.validNano = true;
       return true;
     }
-    this.validNano = this.amountNano !== '-' && (this.util.account.isValidNanoAmount(this.amountNano) || Number(this.amountNano) === 0);
+    this.validNano = this.amountNano !== '-' && (this.util.account.isValidBtcoAmount(this.amountNano) || Number(this.amountNano) === 0);
     return this.validNano;
   }
 
@@ -313,7 +313,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
     receivableBlock.loading = true;
 
     const createdReceiveBlockHash =
-      await this.nanoBlock.generateReceive(walletAccount, sourceBlock, this.walletService.isLedgerWallet());
+      await this.btcoBlock.generateReceive(walletAccount, sourceBlock, this.walletService.isLedgerWallet());
 
     if (createdReceiveBlockHash) {
       receivableBlock.received = true;

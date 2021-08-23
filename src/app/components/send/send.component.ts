@@ -10,7 +10,7 @@ import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {ActivatedRoute} from '@angular/router';
 import {PriceService} from '../../services/price.service';
-import {NanoBlockService} from '../../services/btco-block.service';
+import {BtcoBlockService} from '../../services/btco-block.service';
 import { QrModalService } from '../../services/qr-modal.service';
 import { environment } from 'environments/environment';
 import { TranslocoService } from '@ngneat/transloco';
@@ -63,7 +63,7 @@ export class SendComponent implements OnInit {
     private addressBookService: AddressBookService,
     private notificationService: NotificationService,
     private nodeApi: ApiService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: BtcoBlockService,
     public price: PriceService,
     private workPool: WorkPoolService,
     public settings: AppSettingsService,
@@ -183,10 +183,10 @@ export class SendComponent implements OnInit {
     }
     if (!this.util.string.isNumeric(this.amountFiat)) return;
     const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const nanoVal = this.util.btco.rawToNano(rawAmount).floor();
-    const nanoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(nanoVal));
+    const btcoVal = this.util.btco.rawToBtco(rawAmount).floor();
+    const btcoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
 
-    this.amount = nanoAmount.toNumber();
+    this.amount = btcoAmount.toNumber();
   }
 
   searchAddressBook() {
@@ -256,7 +256,7 @@ export class SendComponent implements OnInit {
   }
 
   validateAmount() {
-    if (this.util.account.isValidNanoAmount(this.amount)) {
+    if (this.util.account.isValidBtcoAmount(this.amount)) {
       this.amountStatus = 1;
       return true;
     } else {
@@ -319,7 +319,7 @@ export class SendComponent implements OnInit {
     const rawAmount = this.getAmountBaseValue(this.amount || 0);
     this.rawAmount = rawAmount.plus(this.amountExtraRaw);
 
-    const nanoAmount = this.rawAmount.div(this.btco);
+    const btcoAmount = this.rawAmount.div(this.btco);
 
     if (this.amount < 0 || rawAmount.lessThan(0)) {
       return this.notificationService.sendWarning(`Amount is invalid`);
@@ -364,7 +364,7 @@ export class SendComponent implements OnInit {
     try {
       const destinationID = this.getDestinationID();
 
-      const newHash = await this.nanoBlock.generateSend(walletAccount, destinationID,
+      const newHash = await this.btcoBlock.generateSend(walletAccount, destinationID,
         this.rawAmount, this.walletService.isLedgerWallet());
 
       if (newHash) {
@@ -403,8 +403,8 @@ export class SendComponent implements OnInit {
 
     this.amountExtraRaw = walletAccount.balanceRaw;
 
-    const nanoVal = this.util.btco.rawToNano(walletAccount.balance).floor();
-    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(nanoVal));
+    const btcoVal = this.util.btco.rawToBtco(walletAccount.balance).floor();
+    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
     this.amount = maxAmount.toNumber();
     this.syncFiatPrice();
   }
@@ -426,7 +426,7 @@ export class SendComponent implements OnInit {
   getAmountValueFromBase(value) {
     switch (this.selectedAmount.value) {
       default:
-      case 'btco': return this.util.btco.rawToNano(value);
+      case 'btco': return this.util.btco.rawToBtco(value);
       case 'kbtco': return this.util.btco.rawToKbtco(value);
       case 'mbtco': return this.util.btco.rawToMBtco(value);
     }

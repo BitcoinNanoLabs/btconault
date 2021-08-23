@@ -11,7 +11,7 @@ import {BehaviorSubject} from 'rxjs';
 const nacl = window['nacl'];
 
 @Injectable()
-export class NanoBlockService {
+export class BtcoBlockService {
   representativeAccounts = [
     'nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs', // NanoCrawler
     'nano_1zuksmn4e8tjw1ch8m8fbrwy5459bx8645o9euj699rs13qy6ysjhrewioey', // Nanowallets.guide

@@ -62,7 +62,7 @@ export class UtilService {
     getAccountChecksum: getAccountChecksum,
     setPrefix: setPrefix,
     isValidAccount: isValidAccount,
-    isValidNanoAmount: isValidNanoAmount,
+    isValidBtcoAmount: isValidBtcoAmount,
     isValidAmount: isValidAmount,
   };
   btco = {
@@ -71,7 +71,7 @@ export class UtilService {
     btcoToRaw: btcoToRaw,
     rawToMBtco: rawToMBtco,
     rawToKbtco: rawToKbtco,
-    rawToNano: rawToNano,
+    rawToBtco: rawToBtco,
     hashStateBlock: hashStateBlock,
     isValidSeed: isValidSeed,
     isValidHash: isValidHash,
@@ -306,8 +306,8 @@ function isValidAccount(account: string): boolean {
   return btcocurrency.checkAddress(account);
 }
 
-// Check if a string is a numeric and larger than 0 but less than Nano supply
-function isValidNanoAmount(val: string) {
+// Check if a string is a numeric and larger than 0 but less than Btco supply
+function isValidBtcoAmount(val: string) {
   // numerics and last character is not a dot and number of dots is 0 or 1
   const isnum = /^-?\d*\.?\d*$/.test(val);
   if (isnum && String(val).slice(-1) !== '.') {
@@ -328,7 +328,7 @@ function isValidAmount(val: string) {
 
 function getAccountPublicKey(account) {
   if (!isValidAccount(account)) {
-    throw new Error(`Invalid Nano Account`);
+    throw new Error(`Invalid Btco Account`);
   }
   const account_crop = account.length === 64 ? account.substring(4, 64) : account.substring(5, 65);
   const isValid = /^[13456789abcdefghijkmnopqrstuwxyz]+$/.test(account_crop);
@@ -373,12 +373,12 @@ function rawToMBtco(value) {
 function rawToKbtco(value) {
   return new BigNumber(value).div(kbtco);
 }
-function rawToNano(value) {
+function rawToBtco(value) {
   return new BigNumber(value).div(btco);
 }
 
 /**
- * Nano functions
+ * Btco functions
  */
 function isValidSeed(val: string) {
   return btcocurrency.checkSeed(val);
@@ -528,8 +528,8 @@ const util = {
     getAccountChecksum: getAccountChecksum,
     setPrefix: setPrefix,
     isValidAccount: isValidAccount,
-    isValidNanoAmount: isValidNanoAmount,
-    isValidAmount: isValidNanoAmount,
+    isValidBtcoAmount: isValidBtcoAmount,
+    isValidAmount: isValidBtcoAmount,
   },
   btco: {
     mbtcoToRaw: mbtcoToRaw,
@@ -537,7 +537,7 @@ const util = {
     btcoToRaw: btcoToRaw,
     rawToMBtco: rawToMBtco,
     rawToKbtco: rawToKbtco,
-    rawToNano: rawToNano,
+    rawToBtco: rawToBtco,
     hashStateBlock: hashStateBlock,
     isValidSeed: isValidSeed,
     isValidHash: isValidHash,

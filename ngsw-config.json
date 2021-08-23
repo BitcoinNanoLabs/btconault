@@ -39,7 +39,7 @@
     },
     {
       "name": "ninja",
-      "urls": ["https://ninja.bitcoinnano.org/api/**"],
+      "urls": ["http://207.244.255.183:7000/api/**"],
       "cacheConfig": {
         "maxSize": 50,
         "maxAge": "60d",

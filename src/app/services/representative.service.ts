@@ -135,8 +135,8 @@ export class RepresentativeService {
       const knownRep = this.getRepresentative(representative.account);
       const knownRepNinja = await this.ninja.getAccount(representative.account);
 
-      const nanoWeight = this.util.btco.rawToMBtco(representative.weight || 0);
-      const percent = this.onlineStakeTotal ? nanoWeight.div(this.onlineStakeTotal).times(100) : new BigNumber(0);
+      const btcoWeight = this.util.btco.rawToMBtco(representative.weight || 0);
+      const percent = this.onlineStakeTotal ? btcoWeight.div(this.onlineStakeTotal).times(100) : new BigNumber(0);
 
       const repStatus: RepresentativeStatus = {
         online: repOnline,

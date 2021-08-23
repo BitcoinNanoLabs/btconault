@@ -5,7 +5,7 @@ import {AddressBookService} from '../../services/address-book.service';
 import {ApiService} from '../../services/api.service';
 import {NotificationService} from '../../services/notification.service';
 import {WalletService} from '../../services/wallet.service';
-import {NanoBlockService} from '../../services/btco-block.service';
+import {BtcoBlockService} from '../../services/btco-block.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {PriceService} from '../../services/price.service';
 import {UtilService} from '../../services/util.service';
@@ -115,7 +115,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     private wallet: WalletService,
     private util: UtilService,
     public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
+    private btcoBlock: BtcoBlockService,
     private qrModalService: QrModalService,
     private ninja: NinjaService,
     private translocoService: TranslocoService) {
@@ -656,8 +656,8 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     }
     if (!this.util.string.isNumeric(this.amountFiat)) return;
     const rawAmount = this.util.btco.mbtcoToRaw(new BigNumber(this.amountFiat).div(this.price.price.lastPrice));
-    const nanoVal = this.util.btco.rawToNano(rawAmount).floor();
-    const nanoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(nanoVal));
+    const btcoVal = this.util.btco.rawToBtco(rawAmount).floor();
+    const nanoAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
 
     this.amount = nanoAmount.toNumber();
   }
@@ -711,7 +711,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   }
 
   validateAmount() {
-    if (this.util.account.isValidNanoAmount(this.amount)) {
+    if (this.util.account.isValidBtcoAmount(this.amount)) {
       this.amountStatus = 1;
       return true;
     } else {
@@ -722,8 +722,8 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
   setMaxAmount() {
     this.amountRaw = this.account.balance ? new BigNumber(this.account.balance).mod(this.btco) : new BigNumber(0);
-    const nanoVal = this.util.btco.rawToNano(this.account.balance).floor();
-    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(nanoVal));
+    const btcoVal = this.util.btco.rawToBtco(this.account.balance).floor();
+    const maxAmount = this.getAmountValueFromBase(this.util.btco.btcoToRaw(btcoVal));
     this.amount = maxAmount.toNumber();
     this.syncFiatPrice();
   }
@@ -741,7 +741,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   getAmountValueFromBase(value) {
     switch (this.selectedAmount.value) {
       default:
-      case 'btco': return this.util.btco.rawToNano(value);
+      case 'btco': return this.util.btco.rawToBtco(value);
       case 'kbtco': return this.util.btco.rawToKbtco(value);
       case 'mbtco': return this.util.btco.rawToMBtco(value);
     }
@@ -771,7 +771,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     receivableBlock.loading = true;
 
     const createdReceiveBlockHash =
-      await this.nanoBlock.generateReceive(this.walletAccount, sourceBlock, this.wallet.isLedgerWallet());
+      await this.btcoBlock.generateReceive(this.walletAccount, sourceBlock, this.wallet.isLedgerWallet());
 
     if (createdReceiveBlockHash) {
       receivableBlock.received = true;
@@ -826,7 +826,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const remaining = new BigNumber(from.balance).minus(this.rawAmount);
     const remainingDecimal = remaining.toString(10);
 
-    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
+    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
     const representative = from.representative || defaultRepresentative;
     const blockData = {
       account: this.accountID.replace('xrb_', 'btco_').toLowerCase(),
@@ -878,7 +878,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const openEquiv = !toAcct || !toAcct.frontier; // if open block
 
     const previousBlock = toAcct.frontier || this.zeroHash; // set to zeroes if open block
-    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.nanoBlock.getRandomRepresentative();
+    const defaultRepresentative = this.settings.settings.defaultRepresentative || this.btcoBlock.getRandomRepresentative();
     const representative = toAcct.representative || defaultRepresentative;
 
     const srcBlockInfo = await this.api.blocksInfo([pendingHash]);
