@@ -13,12 +13,12 @@ const nacl = window['nacl'];
 @Injectable()
 export class BtcoBlockService {
   representativeAccounts = [
-    'nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs', // NanoCrawler
-    'nano_1zuksmn4e8tjw1ch8m8fbrwy5459bx8645o9euj699rs13qy6ysjhrewioey', // Nanowallets.guide
-    'nano_3chartsi6ja8ay1qq9xg3xegqnbg1qx76nouw6jedyb8wx3r4wu94rxap7hg', // Nano Charts
-    'nano_1ninja7rh37ehfp9utkor5ixmxyg8kme8fnzc4zty145ibch8kf5jwpnzr3r', // My Nano Ninja
-    'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar', // NanoTicker / Json
-    'nano_3power3gwb43rs7u9ky3rsjp6fojftejceexfkf845sfczyue4q3r1hfpr3o', // PowerNode
+    'btco_36u6rwcg9us6wwrgcdt7xyqz4wm4e9y48goahfup6zuqabhfrx5x7g1xdddi', // NanoCrawler
+    'btco_36qaepuktgazzkxtwwdngk3ihisxmchmnfpignhrp7xqe8nxebtcdkunytda', // Nanowallets.guide
+    'btco_3tu3fqfrcpqcwwrm8g6puzknft5uhxjezztfjracgo9jx4posik5szbn5waz', // Nano Charts
+    'btco_1pprkm1z961ne88ocysdze9uq3o4ctfjtpinfgsjthuuqxgt37tbhpzfb9zi', // My Nano Ninja
+    'btco_3jrokzqbee3kyugs3nbq85jpjood486iu8ub6gsinfbcwq49khchu8h9yfp9', // NanoTicker / Json
+    'btco_1uq86kuyewewkfd64m6jfsyeqntpxsf5ok9a4ijfzcj8nkn35zrpphuzuy1f', // PowerNode
   ];
 
   zeroHash = '0000000000000000000000000000000000000000000000000000000000000000';

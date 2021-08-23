@@ -200,7 +200,7 @@
                 <hr>
 
                 <div class="uk-margin">
-                  <p class="uk-text-lead uk-text-center">Select a representative recommended by <a href="http://207.244.255.183:7000" target="_blank" rel="noopener noreferrer" class="uk-link-text">MyBitcoinNanoNinja</a></p>
+                  <p class="uk-text-lead uk-text-center">Select a representative recommended by <a href="https://ninja.bitcoinnano.org" target="_blank" rel="noopener noreferrer" class="uk-link-text">MyBitcoinNanoNinja</a></p>
                   <!--<h4>Or, Select a recommended representative</h4>-->
                   <ul class="uk-list uk-list-striped" style="margin-bottom: 0;">
                     <li class="uk-list-header">
@@ -225,7 +225,7 @@
 
                         </div>
                         <div class="uk-width-1-2">
-                          <a [href]="'http://207.244.255.183:7000/account/' + rep.account" target="_blank" rel="noopener noreferrer" style="float: right;" uk-tooltip title="View more details on My Nano Ninja" class="uk-link-muted"><span uk-icon="search"></span></a>
+                          <a [href]="'https://ninja.bitcoinnano.org/account/' + rep.account" target="_blank" rel="noopener noreferrer" style="float: right;" uk-tooltip title="View more details on My Nano Ninja" class="uk-link-muted"><span uk-icon="search"></span></a>
 
                           <span style="display: inline-block; margin-right: 15px;" uk-tooltip title="Percentage of network voting weight delegated" class="uk-text-primary"><span uk-icon="users"></span> {{ rep.percent }}%</span>
                           <span style="display: inline-block; margin-right: 15px; color: #13ab60;" uk-tooltip title="Uptime since creation" class=""><span uk-icon="bolt"></span> {{ rep.uptime.toFixed(2) }}%</span>
@@ -234,7 +234,7 @@
                       </div>
                     </li>
                   </ul>
-                  <a href="https://mynano.ninja" target="_blank" rel="noopener noreferrer" class="view-all-reps-link uk-link-muted" uk-tooltip title="View all verified representatives on MyBitcoinNanoNinja">View All <span uk-icon="icon: push; ratio: 0.9;"></span></a>
+                  <a href="https://ninja.bitcoinnano.org" target="_blank" rel="noopener noreferrer" class="view-all-reps-link uk-link-muted" uk-tooltip title="View all verified representatives on MyBitcoinNanoNinja">View All <span uk-icon="icon: push; ratio: 0.9;"></span></a>
                   <ul class="uk-pagination uk-flex-center uk-flex-middle">
                     <li><a (click)="previousReps()" uk-tooltip title="Previous Page"><span uk-pagination-previous class="uk-icon-button"></span></a></li>
                     <li>Showing {{ (currentRepPage * repsPerPage)+ 1 }} - {{ (currentRepPage * repsPerPage)+ repsPerPage }} of {{ recommendedReps.length }} reps</li>
