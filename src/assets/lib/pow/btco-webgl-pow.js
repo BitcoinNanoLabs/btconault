@@ -10,10 +10,12 @@
 // @param progressCallback  Function Optional
 //   Receives single argument: n, number of frames so far
 //   Return true to abort
-// @param threshold         String   Optional difficulty threshold (default=0xFFFFFFF8 since v21)
+// @param threshold         String   Optional difficulty threshold (default=0xFFC00000 since v21)
 
 (function(){
-const defaultThreshold = '0xFFFFFFF8'
+  
+  
+const defaultThreshold = '0xFFC00000'
 
 function array_hex(arr, index, length) {
   let out='';
@@ -126,7 +128,7 @@ function calculate(hashHex, callback, progressCallback, threshold = defaultThres
     void add_uint64 (int a, uint b0, uint b1) {
       uint o0 = v[a] + b0;
       uint o1 = v[a + 1] + b1;
-      if (v[a] > 0xFFFFFFFFu - b0) { // did low 32 bits overflow?
+      if (v[a] > 0xFFC00000u - b0) { // did low 32 bits overflow?
         o1++;
       }
       v[a] = o0;

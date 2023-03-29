@@ -299,12 +299,12 @@ window.nacl = {};
     for (j = 0; j < 2; j++) {
       m[0] = t[0] - 0xffed;
       for (i = 1; i < 15; i++) {
-        m[i] = t[i] - 0xffff - ((m[i-1]>>16) & 1);
-        m[i-1] &= 0xffff;
-      }
+        m[i] = t[i] - 0xffc0 - ((m[i-1]>>16) & 1);
+        m[i-1] &= 0xffc0;
+      }  
       m[15] = t[15] - 0x7fff - ((m[14]>>16) & 1);
       b = (m[15]>>16) & 1;
-      m[14] &= 0xffff;
+      m[14] &= 0xffc0;
       sel25519(t, m, 1-b);
     }
     for (i = 0; i < 16; i++) {
